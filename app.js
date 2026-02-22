@@ -20,6 +20,10 @@ function fmtYears(val) {
     if (val == null || isNaN(val) || val > 100) return 'N/A';
     return val.toFixed(1) + ' yrs';
 }
+function fmtMWh(val) {
+    if (val == null || isNaN(val)) return '—';
+    return Math.round(val).toLocaleString('en-US') + ' MWh';
+}
 
 /* ── DOM Helpers ─────────────────────────────────────────────── */
 const $ = (sel) => document.querySelector(sel);
@@ -81,7 +85,9 @@ const DEFAULTS = {
     'inp-admin-cost': 20000, 'inp-preventive-maintenance': 30000,
     'inp-project-life': 25,
     'inp-degradation': 2.5,
+    'inp-cycles-per-day': 1.5,
     'inp-debt-amount': 1500000, 'inp-debt-rate': 5, 'inp-loan-term': 10,
+    'inp-tax-rate': 25, 'inp-discount-rate': 8,
 };
 
 function resetDefaults() {
@@ -108,6 +114,8 @@ function renderIncomeTable(model) {
 
     const rows = [
         { label: 'Revenue', cls: 'row-header', data: null },
+        { label: '  Energy Charged', cls: '', data: model.energyCharged, format: 'mwh' },
+        { label: '  Energy Sold', cls: '', data: model.energySold, format: 'mwh' },
         { label: '  Arbitrage Revenue', cls: '', data: model.arbRevenue },
         { label: '  PPA Revenue', cls: '', data: model.ppaRevenue },
         { label: '  Ancillary Services', cls: '', data: model.ancillaryRev },
@@ -138,7 +146,11 @@ function renderIncomeTable(model) {
         const cls = row.cls ? ` class="${row.cls}"` : '';
         bhtml += `<tr${cls}><td>${row.label}</td>`;
         if (row.data) {
-            for (let y = 0; y < displayN; y++) bhtml += `<td>${fmtDollar(row.data[y])}</td>`;
+            for (let y = 0; y < displayN; y++) {
+                const v = row.data[y];
+                const cell = row.format === 'mwh' ? fmtMWh(v) : fmtDollar(v);
+                bhtml += `<td>${cell}</td>`;
+            }
         } else {
             for (let y = 0; y < displayN; y++) bhtml += '<td></td>';
         }
@@ -304,7 +316,8 @@ function exportCSV(model) {
 let recalcTimer = null;
 
 function recalculate() {
-    const params = collectParams();
+    let params = collectParams();
+    if (typeof finalizeParams === 'function') params = finalizeParams(params);
     const model = runModel(params);
     updateKPIs(model, params);
     renderIncomeTable(model);

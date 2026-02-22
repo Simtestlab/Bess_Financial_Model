@@ -25,7 +25,9 @@ function collectParams() {
         dischargePrice: v('inp-discharge-price'), // $/MWh
 
         // Revenue
-        ppaVolume: v('inp-ppa-vol'),
+        // PPA volume is now auto-calculated from technical limits
+        cyclesPerDay: v('inp-cycles-per-day'),
+        // ppaVolume will be calculated below after other params are set
         ppaPrice: v('inp-ppa-price'),
         ppaEsc: v('inp-ppa-esc') / 100,
         ancillaryRev: v('inp-ancillary'),
@@ -43,9 +45,9 @@ function collectParams() {
         // Financial
         projectLife: Math.max(5, Math.round(v('inp-project-life'))),
         // deprPeriod removed - now using projectLife for depreciation
-        // Tax and discount rates hardcoded since UI inputs removed
-        taxRate: 0.25,  // 25%
-        discountRate: 0.08,  // 8%
+        // Tax and discount rates read from UI
+        taxRate: v('inp-tax-rate') / 100,
+        discountRate: v('inp-discount-rate') / 100,
 
         // Debt
         debtAmount: v('inp-debt-amount'),
@@ -57,6 +59,18 @@ function collectParams() {
         // batReplCost: v('inp-repl-cost'),
             degradation: (document.getElementById('inp-degradation') ? (v('inp-degradation') / 100) : 0.025),
     };
+}
+
+// Post-process params to compute derived fields that depend on multiple inputs
+function finalizeParams(p) {
+    // Ensure rte and availability are decimals (collectParams returns them as decimals already)
+    const cycles = p.cyclesPerDay || 0;
+    const ppaVol = p.capacity * cycles * p.arbDays * p.rte * p.availability;
+    p.ppaVolume = Math.round(ppaVol);
+    // Update UI display for the calculated PPA volume (read-only input)
+    const el = document.getElementById('inp-ppa-vol');
+    if (el) el.value = p.ppaVolume;
+    return p;
 }
 
 // ── Run the full financial model ────────────────────────────
