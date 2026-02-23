@@ -19,24 +19,6 @@ export default function SectionNav({ activeSection, setActiveSection }) {
                 </div>
                 <div className="section-tabs" role="tablist">
                     <button
-                        className={`section-tab ${activeSection === 'section-financial' ? 'active' : ''}`}
-                        onClick={() => setActiveSection('section-financial')}
-                        role="tab"
-                        aria-selected={activeSection === 'section-financial'}
-                        id="section-tab-financial"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path
-                                d="M2 14V4l4-2v12M6 14V6l4-2v10M10 14V8l4-2v8"
-                                stroke="currentColor"
-                                strokeWidth="1.3"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        </svg>
-                        BESS Financial Model
-                    </button>
-                    <button
                         className={`section-tab ${activeSection === 'section-handbook' ? 'active' : ''}`}
                         onClick={() => setActiveSection('section-handbook')}
                         role="tab"
@@ -53,7 +35,25 @@ export default function SectionNav({ activeSection, setActiveSection }) {
                             />
                             <path d="M8.5 4.5V14" stroke="currentColor" strokeWidth="1.3" />
                         </svg>
-                        BESS Handbook
+                        BESS Sizing
+                    </button>
+                    <button
+                        className={`section-tab ${activeSection === 'section-financial' ? 'active' : ''}`}
+                        onClick={() => setActiveSection('section-financial')}
+                        role="tab"
+                        aria-selected={activeSection === 'section-financial'}
+                        id="section-tab-financial"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path
+                                d="M2 14V4l4-2v12M6 14V6l4-2v10M10 14V8l4-2v8"
+                                stroke="currentColor"
+                                strokeWidth="1.3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
+                        BESS Financial Model
                     </button>
                 </div>
                 <CurrencyConverter

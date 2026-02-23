@@ -1,9 +1,9 @@
 /* ============================================================
-   BESS Handbook — Calculator Engine
-   ============================================================
-   Pure computation module — no DOM dependencies.
-   Implements the exact BESS design formulas from useBESSCalculator.
-   ============================================================ */
+    BESS Sizing — Calculator Engine
+    ============================================================
+    Pure computation module — no DOM dependencies.
+    Implements the exact BESS design formulas from useBESSCalculator.
+    ============================================================ */
 
 export const HANDBOOK_DEFAULTS = {
     cellChemistry: 'LFP',

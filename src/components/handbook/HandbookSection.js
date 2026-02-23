@@ -5,7 +5,7 @@ import HandbookSidebar from './HandbookSidebar';
 import HandbookMain from './HandbookMain';
 import { HANDBOOK_DEFAULTS, calculateBESS } from '@/lib/handbook-engine';
 
-const STORAGE_KEY = 'bess-handbook-inputs';
+const STORAGE_KEY = 'bess-sizing-inputs';
 
 function saveInputs(inputs) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(inputs)); } catch (e) { }
