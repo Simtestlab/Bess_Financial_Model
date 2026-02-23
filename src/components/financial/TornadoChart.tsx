@@ -63,7 +63,13 @@ export default function TornadoChart({ params }) {
                 maintainAspectRatio: false,
                 scales: {
                     x: {
-                        ticks: { color: '#94a3b8', callback: v => (v >= 0 ? '+' : '') + v.toFixed(1) + ' pp' },
+                        ticks: { 
+                            color: '#94a3b8', 
+                            callback: (v) => {
+                                const val = typeof v === 'number' ? v : parseFloat(v);
+                                return (val >= 0 ? '+' : '') + val.toFixed(1) + ' pp';
+                            }
+                        },
                         grid: { color: 'rgba(255,255,255,0.06)' },
                         title: { display: true, text: 'IRR Change (percentage points)', color: '#94a3b8' }
                     },

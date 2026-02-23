@@ -1,6 +1,18 @@
 'use client';
 
-function NumInput({ id, label, value, unit, onChange, step, min, max, readOnly }) {
+interface NumInputProps {
+    id: string;
+    label: string;
+    value: number;
+    unit: string;
+    onChange: (val: number) => void;
+    step?: number;
+    min?: number;
+    max?: number;
+    readOnly?: boolean;
+}
+
+function NumInput({ id, label, value, unit, onChange, step, min, max, readOnly }: NumInputProps) {
     return (
         <div className="param">
             <label htmlFor={id}>{label}</label>
@@ -21,7 +33,17 @@ function NumInput({ id, label, value, unit, onChange, step, min, max, readOnly }
     );
 }
 
-function SliderInput({ id, label, value, onChange, min, max, step }) {
+interface SliderInputProps {
+    id: string;
+    label: string;
+    value: number;
+    onChange: (val: number) => void;
+    min: number;
+    max: number;
+    step?: number;
+}
+
+function SliderInput({ id, label, value, onChange, min, max, step }: SliderInputProps) {
     return (
         <div className="param">
             <label htmlFor={id}>{label}</label>
@@ -35,13 +57,21 @@ function SliderInput({ id, label, value, onChange, min, max, step }) {
                     value={value}
                     onChange={e => onChange(parseFloat(e.target.value))}
                 />
-                <span className="slider-val">{parseFloat(value).toFixed(1)}%</span>
+                <span className="slider-val">{value.toFixed(1)}%</span>
             </div>
         </div>
     );
 }
 
-export default function FinancialSidebar({ inputs, onInputChange, onReset, collapsed, ppaVolume }) {
+interface FinancialSidebarProps {
+    inputs: any;
+    onInputChange: (key: string, val: number) => void;
+    onReset: () => void;
+    collapsed: boolean;
+    ppaVolume: number | null;
+}
+
+export default function FinancialSidebar({ inputs, onInputChange, onReset, collapsed, ppaVolume }: FinancialSidebarProps) {
     const c = (key) => (val) => onInputChange(key, val);
 
     return (

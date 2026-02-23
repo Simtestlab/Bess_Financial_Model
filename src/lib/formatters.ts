@@ -4,12 +4,8 @@
 
 /**
  * Format a value as currency with optional exchange rate
- * @param {number} val - Value to format
- * @param {string} symbol - Currency symbol (default: '$')
- * @param {number} exchangeRate - Exchange rate (default: 1)
- * @returns {string} Formatted currency string
  */
-export function fmtDollar(val, symbol = '$', exchangeRate = 1) {
+export function fmtDollar(val: number | null | undefined, symbol: string = '$', exchangeRate: number = 1): string {
     if (val == null || isNaN(val)) return '—';
     const convertedVal = val * exchangeRate;
     const abs = Math.abs(convertedVal);
@@ -18,29 +14,25 @@ export function fmtDollar(val, symbol = '$', exchangeRate = 1) {
     return sign + symbol + Math.round(abs).toLocaleString('en-US');
 }
 
-export function fmtPct(val) {
+export function fmtPct(val: number | null | undefined): string {
     if (val == null || isNaN(val)) return '—';
     return (val * 100).toFixed(1) + '%';
 }
 
-export function fmtYears(val) {
+export function fmtYears(val: number | null | undefined): string {
     if (val == null || isNaN(val) || val > 100) return 'N/A';
     return val.toFixed(1) + ' yrs';
 }
 
-export function fmtMWh(val) {
+export function fmtMWh(val: number | null | undefined): string {
     if (val == null || isNaN(val)) return '—';
     return Math.round(val).toLocaleString('en-US') + ' MWh';
 }
 
 /**
  * Format a value as currency with optional exchange rate
- * @param {number} val - Value to format
- * @param {string} symbol - Currency symbol (default: '$')
- * @param {number} exchangeRate - Exchange rate (default: 1)
- * @returns {string} Formatted currency string
  */
-export function fmtCurrency(val, symbol = '$', exchangeRate = 1) {
+export function fmtCurrency(val: number | null | undefined, symbol: string = '$', exchangeRate: number = 1): string {
     if (val == null || isNaN(val)) return '—';
     const convertedVal = val * exchangeRate;
     const abs = Math.abs(convertedVal);
