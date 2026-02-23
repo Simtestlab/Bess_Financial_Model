@@ -650,8 +650,13 @@ body {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Tabs ───────────────────────────────────────────────────── */
@@ -935,50 +940,397 @@ body {
 }
 
 /* ============================================================
-   HANDBOOK LIVE STATUS BADGES
+   BESS SIZING — Sectioned Layout
    ============================================================ */
-.hb-status-badge-live {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  transition: all 0.25s var(--ease);
-}
 
-.hb-status-badge-live.status-ok {
-  background: rgba(52, 211, 153, 0.12);
-  color: var(--emerald-400);
-  border: 1px solid rgba(52, 211, 153, 0.25);
-}
-
-.hb-status-badge-live.status-warn {
-  background: rgba(251, 191, 36, 0.12);
-  color: var(--amber-400);
-  border: 1px solid rgba(251, 191, 36, 0.25);
-}
-
-.hb-status-badge-live.status-over {
-  background: rgba(96, 165, 250, 0.12);
-  color: var(--blue-400);
-  border: 1px solid rgba(96, 165, 250, 0.25);
-}
-
-/* Handbook section sidebar & main positioning */
-#section-handbook .sidebar {
-  position: fixed;
-  top: var(--section-nav-h);
-  left: 0;
-  width: var(--sidebar-w);
-  height: calc(100vh - var(--section-nav-h));
-}
-
-#section-handbook .main-content {
-  margin-left: var(--sidebar-w);
+/* Full-width layout (no sidebar) */
+.bess-layout {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - var(--section-nav-h));
+  width: 100%;
+}
+
+/* KPI bar at top */
+.bess-kpi-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.bess-kpi-bar .btn-reset {
+  margin-left: auto;
+}
+
+/* Section tab strip */
+.bess-section-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 24px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.bess-tab {
+  position: relative;
+  padding: 12px 22px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s var(--ease);
+  white-space: nowrap;
+}
+
+.bess-tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--emerald-400);
+  transform: translateX(-50%);
+  transition: width 0.25s var(--ease);
+  border-radius: 2px 2px 0 0;
+}
+
+.bess-tab:hover {
+  color: var(--text-secondary);
+}
+
+.bess-tab.active {
+  color: var(--emerald-400);
+}
+
+.bess-tab.active::after {
+  width: 70%;
+}
+
+/* Section content area */
+.bess-section-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* Panel animation */
+.bess-section-panel {
+  animation: bessFadeIn 0.3s var(--ease);
+}
+
+@keyframes bessFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Split: inputs left, results right */
+.bess-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* Cards */
+.bess-inputs-card,
+.bess-results-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: border-color 0.2s var(--ease);
+}
+
+.bess-inputs-card:hover,
+.bess-results-card:hover {
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+.bess-inputs-card h3,
+.bess-results-card h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+  color: var(--text-primary);
+}
+
+/* Form field */
+.bess-field {
+  margin: 8px 0;
+}
+
+.bess-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  padding-left: 2px;
+}
+
+.bess-field-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bess-field-row input,
+.bess-field-row select {
+  flex: 1;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  appearance: textfield;
+}
+
+.bess-field-row input::-webkit-inner-spin-button,
+.bess-field-row input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+.bess-field-row input:focus,
+.bess-field-row select:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--emerald-glow);
+}
+
+.bess-unit {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  min-width: 42px;
+  text-align: right;
+}
+
+/* Result table */
+.bess-result-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.bess-result-table th,
+.bess-result-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bess-result-table th {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bess-result-table td {
+  color: var(--text-secondary);
+}
+
+.bess-result-table td:first-child {
+  text-align: left;
+  font-weight: 500;
+}
+
+.bess-result-table td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.bess-result-table th:last-child {
+  text-align: right;
+}
+
+.bess-result-table tr.row-total td {
+  font-weight: 700;
+  color: var(--emerald-400);
+  border-top: 2px solid var(--emerald-400);
+}
+
+/* ── BOM Table (Module / Pack editable tables) ─────────────── */
+.bom-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.bom-table thead th {
+  padding: 8px 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid var(--border);
+}
+
+/* First column left, rest right */
+.bom-table thead th.bom-col-item {
+  text-align: left;
+}
+
+.bom-table thead th.bom-col-qty {
+  text-align: right;
+}
+
+.bom-table thead th.bom-col-price {
+  text-align: right;
+}
+
+.bom-table thead th.bom-col-total {
+  text-align: right;
+}
+
+.bom-table tbody td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.bom-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.bom-table tbody tr:hover {
+  background: rgba(52, 211, 153, 0.04);
+}
+
+.bom-table td:first-child {
+  font-weight: 500;
+  text-align: left;
+}
+
+/* Qty cells — right-align, reserve space for unit hints */
+.bom-td-qty {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  white-space: nowrap;
+  position: relative;
+  padding-right: 26px !important;
+}
+
+/* Price cells — right-align, reserve space for unit hints */
+.bom-td-price {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  position: relative;
+  padding-right: 26px !important;
+}
+
+/* Total cells — right-align + bold */
+.bom-td-total {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.bom-table tfoot td {
+  padding: 10px;
+  border-top: 2px solid var(--emerald-400);
+}
+
+.bom-table tfoot .row-total td {
+  font-weight: 700;
+  color: var(--emerald-400);
+  border-bottom: none;
+}
+
+/* Compact inline input for BOM table cells */
+.bom-cell-input {
+  width: 100%;
+  max-width: 120px;
+  min-width: 60px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  text-align: right;
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  appearance: textfield;
+  box-sizing: border-box;
+}
+
+.bom-cell-input::-webkit-inner-spin-button,
+.bom-cell-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+.bom-cell-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--emerald-glow);
+}
+
+.bom-unit-hint {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* Inline results (structural parameter bar) */
+.bess-results-inline {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  padding-bottom: 6px;
+}
+
+.bess-results-inline strong {
+  color: var(--text-primary);
+  margin-right: 4px;
+}
+
+/* Summary grid */
+.bess-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.bess-summary-wide {
+  grid-column: 1 / -1;
 }
 
 /* ── Responsive ─────────────────────────────────────────────── */
@@ -995,12 +1347,8 @@ body {
     margin-left: 0;
   }
 
-  #section-handbook .sidebar {
-    transform: translateX(calc(-1 * var(--sidebar-w)));
-  }
-
-  #section-handbook .main-content {
-    margin-left: 0;
+  .bess-split {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1011,6 +1359,11 @@ body {
 
   .section-nav-inner {
     justify-content: center;
+  }
+
+  .bess-tab {
+    padding: 10px 14px;
+    font-size: 0.75rem;
   }
 }
 
@@ -1035,5 +1388,13 @@ body {
 
   .section-tab svg {
     display: none;
+  }
+
+  .bess-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bess-section-content {
+    padding: 12px;
   }
 }
