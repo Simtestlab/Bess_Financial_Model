@@ -45,7 +45,7 @@ export default function FinancialSection() {
             const next = { ...prev, [key]: value };
             // Debounced recalculation
             clearTimeout(recalcTimerRef.current);
-            recalcTimerRef.current = setTimeout(() => recalculate(next), 80);
+            recalcTimerRef.current = setTimeout(() => recalculate(next), 30);
             return next;
         });
     }, [recalculate]);

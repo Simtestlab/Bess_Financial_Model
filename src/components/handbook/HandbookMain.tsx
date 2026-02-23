@@ -1,5 +1,7 @@
 'use client';
 
+import { fmtCurrency } from '@/lib/formatters';
+
 function fmt(n: number, digits = 1): string {
     if (n == null || isNaN(n)) return '--';
     return n.toLocaleString('en-IN', { minimumFractionDigits: digits, maximumFractionDigits: digits });
@@ -10,12 +12,14 @@ function fmtInt(n: number): string {
     return Math.round(n).toLocaleString('en-IN');
 }
 
-function fmtCurrency(n: number): string {
-    if (n == null || isNaN(n)) return '--';
-    return '₹ ' + Math.round(n).toLocaleString('en-IN');
+interface HandbookMainProps {
+    outputs: any;
+    selectedCurrency: string;
+    exchangeRate: number;
+    currencySymbol: string;
 }
 
-export default function HandbookMain({ outputs }: { outputs: any }) {
+export default function HandbookMain({ outputs, selectedCurrency, exchangeRate, currencySymbol }: HandbookMainProps) {
     const o = outputs;
 
     return (
@@ -44,7 +48,7 @@ export default function HandbookMain({ outputs }: { outputs: any }) {
                     <div className="kpi-card kpi-rev">
                         <span className="kpi-label">Total Cell Cost</span>
                         <span id="out-totalCellCost" className="kpi-value">
-                            {o ? fmtCurrency(o.totalCellCost) : '--'}
+                            {o ? fmtCurrency(o.totalCellCost, currencySymbol, exchangeRate) : '--'}
                         </span>
                     </div>
                 </div>
@@ -101,7 +105,7 @@ export default function HandbookMain({ outputs }: { outputs: any }) {
                                 <tr><td>Total Energy</td><td id="out-totalEnergy2">{o ? fmt(o.totalEnergy, 1) + ' kWh' : '--'}</td></tr>
                                 <tr><td>Total Energy (MWh)</td><td id="out-totalEnergyMWh">{o ? fmt(o.totalEnergyMWh, 4) + ' MWh' : '--'}</td></tr>
                                 <tr><td>Total Cells</td><td id="out-totalCells">{o ? fmtInt(o.totalCells) + ' cells' : '--'}</td></tr>
-                                <tr><td>Total Cell Cost</td><td id="out-totalCellCost2">{o ? fmtCurrency(o.totalCellCost) : '--'}</td></tr>
+                                <tr><td>Total Cell Cost</td><td id="out-totalCellCost2">{o ? fmtCurrency(o.totalCellCost, currencySymbol, exchangeRate) : '--'}</td></tr>
                                 <tr><td>Required Gross Energy</td><td id="out-grossEnergy">{o ? fmt(o.requiredGrossEnergy, 1) + ' kWh' : '--'}</td></tr>
                                 <tr><td>Delivered AC Energy</td><td id="out-deliveredAC2">{o ? fmt(o.deliveredACEnergy, 1) + ' kWh' : '--'}</td></tr>
                                 <tr><td>Total Modules Required</td><td id="out-totalModules">{o ? fmtInt(o.totalModulesRequired) + ' modules' : '--'}</td></tr>
@@ -117,35 +121,35 @@ export default function HandbookMain({ outputs }: { outputs: any }) {
                         <thead>
                             <tr>
                                 <th style={{ textAlign: 'left' }}>Item</th>
-                                <th>Quantity</th>
-                                <th>Price (INR)</th>
+                                <th style={{ textAlign: 'center' }}>Quantity</th>
+                                <th style={{ textAlign: 'center' }}>Price</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>Mechanical Housing</td>
-                                <td>{o ? fmtInt(o.housingQty) : '--'}</td>
-                                <td>{o ? fmtCurrency(o.housingPrice) : '--'}</td>
+                                <td style={{ textAlign: 'center' }}>{o ? fmtInt(o.housingQty) : '--'}</td>
+                                <td style={{ textAlign: 'center' }}>{o ? fmtCurrency(o.housingPrice, currencySymbol, exchangeRate) : '--'}</td>
                             </tr>
                             <tr>
                                 <td>LFP Cells</td>
-                                <td>{o ? fmtInt(o.cellsQty) : '--'}</td>
-                                <td>{o ? fmtCurrency(o.cellsPrice) : '--'}</td>
+                                <td style={{ textAlign: 'center' }}>{o ? fmtInt(o.cellsQty) : '--'}</td>
+                                <td style={{ textAlign: 'center' }}>{o ? fmtCurrency(o.cellsPrice, currencySymbol, exchangeRate) : '--'}</td>
                             </tr>
                             <tr>
                                 <td>Busbar</td>
-                                <td>{o ? fmtInt(o.busbarQty) : '--'}</td>
-                                <td>{o ? fmtCurrency(o.busbarPrice) : '--'}</td>
+                                <td style={{ textAlign: 'center' }}>{o ? fmtInt(o.busbarQty) : '--'}</td>
+                                <td style={{ textAlign: 'center' }}>{o ? fmtCurrency(o.busbarPrice, currencySymbol, exchangeRate) : '--'}</td>
                             </tr>
                             <tr>
                                 <td>CSC</td>
-                                <td>{o ? fmtInt(o.cscQty) : '--'}</td>
-                                <td>{o ? fmtCurrency(o.cscPrice) : '--'}</td>
+                                <td style={{ textAlign: 'center' }}>{o ? fmtInt(o.cscQty) : '--'}</td>
+                                <td style={{ textAlign: 'center' }}>{o ? fmtCurrency(o.cscPrice, currencySymbol, exchangeRate) : '--'}</td>
                             </tr>
                             <tr className="row-total">
                                 <td>Total per Module</td>
-                                <td></td>
-                                <td>{o ? fmtCurrency(o.totalModuleCost) : '--'}</td>
+                                <td style={{ textAlign: 'center' }}></td>
+                                <td style={{ textAlign: 'center' }}>{o ? fmtCurrency(o.totalModuleCost, currencySymbol, exchangeRate) : '--'}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -156,9 +160,9 @@ export default function HandbookMain({ outputs }: { outputs: any }) {
                     <h3>📊 System Cost Summary</h3>
                     <table className="sens-table">
                         <tbody>
-                            <tr><td>Total Cell Cost</td><td id="out-sysCellCost">{o ? fmtCurrency(o.totalCellCost) : '--'}</td></tr>
-                            <tr><td>Total Rack Cost</td><td id="out-sysRackCost">{o ? fmtCurrency(o.totalRackCost) : '--'}</td></tr>
-                            <tr><td>Total Module Cost (All Modules)</td><td id="out-sysModCost">{o ? fmtCurrency(o.totalSystemModuleCost) : '--'}</td></tr>
+                            <tr><td>Total Cell Cost</td><td id="out-sysCellCost">{o ? fmtCurrency(o.totalCellCost, currencySymbol, exchangeRate) : '--'}</td></tr>
+                            <tr><td>Total Rack Cost</td><td id="out-sysRackCost">{o ? fmtCurrency(o.totalRackCost, currencySymbol, exchangeRate) : '--'}</td></tr>
+                            <tr><td>Total Module Cost (All Modules)</td><td id="out-sysModCost">{o ? fmtCurrency(o.totalSystemModuleCost, currencySymbol, exchangeRate) : '--'}</td></tr>
                         </tbody>
                     </table>
                 </div>

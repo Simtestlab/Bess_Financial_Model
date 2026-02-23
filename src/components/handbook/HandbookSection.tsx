@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import HandbookSidebar from './HandbookSidebar';
 import HandbookMain from './HandbookMain';
 import { HANDBOOK_DEFAULTS, calculateBESS } from '@/lib/handbook-engine';
+import { useCurrency } from '@/lib/CurrencyContext';
+import { getCurrencyInfo } from '@/lib/currency';
 
 const STORAGE_KEY = 'bess-sizing-inputs';
 
@@ -45,7 +47,7 @@ export default function HandbookSection() {
         setInputs(prev => {
             const next = { ...prev, [key]: value };
             clearTimeout(timerRef.current);
-            timerRef.current = setTimeout(() => recalculate(next), 60);
+            timerRef.current = setTimeout(() => recalculate(next), 30);
             return next;
         });
     }, [recalculate]);
@@ -57,6 +59,10 @@ export default function HandbookSection() {
         recalculate(defaults);
     }, [recalculate]);
 
+    const { selectedCurrency, exchangeRate } = useCurrency();
+    const currencyInfo = getCurrencyInfo(selectedCurrency);
+    const currencySymbol = currencyInfo?.symbol || '$';
+
     return (
         <>
             <HandbookSidebar
@@ -64,7 +70,12 @@ export default function HandbookSection() {
                 onInputChange={handleInputChange}
                 onReset={handleReset}
             />
-            <HandbookMain outputs={outputs} />
+            <HandbookMain 
+                outputs={outputs} 
+                selectedCurrency={selectedCurrency}
+                exchangeRate={exchangeRate}
+                currencySymbol={currencySymbol}
+            />
         </>
     );
 }

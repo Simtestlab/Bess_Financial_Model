@@ -1,4 +1,6 @@
-'use client';
+ 'use client';
+
+import { useState, useEffect, useRef } from 'react';
 
 interface NumInputProps {
     id: string;
@@ -12,6 +14,39 @@ interface NumInputProps {
 }
 
 function NumInput({ id, label, value, unit, onChange, step, min, max }: NumInputProps) {
+    const [text, setText] = useState<string>(value != null ? String(value) : '');
+    const commitTimerRef = useRef<any>(null);
+
+    useEffect(() => {
+        setText(value != null ? String(value) : '');
+    }, [value]);
+
+    const commit = () => {
+        const parsed = parseFloat(text);
+        if (!isNaN(parsed)) {
+            onChange(parsed);
+        } else if (text === '' || text === '-') {
+            // Allow empty/minus while typing
+        } else {
+            onChange(0);
+            setText('0');
+        }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newText = e.target.value;
+        setText(newText);
+        
+        // Auto-commit valid numbers after 300ms of no typing
+        clearTimeout(commitTimerRef.current);
+        const parsed = parseFloat(newText);
+        if (!isNaN(parsed)) {
+            commitTimerRef.current = setTimeout(() => {
+                onChange(parsed);
+            }, 300);
+        }
+    };
+
     return (
         <div className="param">
             <label htmlFor={id}>{label}</label>
@@ -23,8 +58,11 @@ function NumInput({ id, label, value, unit, onChange, step, min, max }: NumInput
                     step={step || 1}
                     min={min}
                     max={max}
-                    value={value}
-                    onChange={e => onChange(parseFloat(e.target.value) || 0)}
+                    value={text}
+                    onChange={handleChange}
+                    onBlur={commit}
+                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    onWheel={e => (e.target as HTMLInputElement).blur()}
                 />
                 <span className="unit">{unit}</span>
             </div>
