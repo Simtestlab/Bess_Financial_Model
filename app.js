@@ -29,6 +29,26 @@ function fmtMWh(val) {
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
+/* ── Section Navigation (Top-Level) ────────────────────────── */
+function initSectionNav() {
+    $$('.section-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Update tab buttons
+            $$('.section-tab').forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-selected', 'false');
+            });
+            btn.classList.add('active');
+            btn.setAttribute('aria-selected', 'true');
+
+            // Show/hide section panels
+            $$('.section-panel').forEach(p => p.classList.remove('active'));
+            const panel = document.getElementById(btn.dataset.section);
+            if (panel) panel.classList.add('active');
+        });
+    });
+}
+
 /* ── Slider Value Displays ──────────────────────────────────── */
 function initSliders() {
     $$('.slider-val').forEach(span => {
@@ -334,6 +354,7 @@ function debouncedRecalc() {
 
 /* ── Initialisation ─────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
+    initSectionNav();
     initSliders();
     initTabs();
     initSidebarToggle();
