@@ -1,6 +1,11 @@
 'use client';
 
+import { useCurrency } from '@/lib/CurrencyContext';
+import CurrencyConverter from '@/components/CurrencyConverter';
+
 export default function SectionNav({ activeSection, setActiveSection }) {
+    const { selectedCurrency, exchangeRate, onCurrencyChange, onRateChange } = useCurrency();
+
     return (
         <nav id="section-nav" className="section-nav">
             <div className="section-nav-inner">
@@ -13,6 +18,25 @@ export default function SectionNav({ activeSection, setActiveSection }) {
                     <span className="section-nav-title">BESS Platform</span>
                 </div>
                 <div className="section-tabs" role="tablist">
+                    <button
+                        className={`section-tab ${activeSection === 'section-handbook' ? 'active' : ''}`}
+                        onClick={() => setActiveSection('section-handbook')}
+                        role="tab"
+                        aria-selected={activeSection === 'section-handbook'}
+                        id="section-tab-handbook"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path
+                                d="M3 3h4l1.5 1.5L10 3h4v11h-4l-1.5 1.5L7 14H3z"
+                                stroke="currentColor"
+                                strokeWidth="1.3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                            <path d="M8.5 4.5V14" stroke="currentColor" strokeWidth="1.3" />
+                        </svg>
+                        BESS Sizing
+                    </button>
                     <button
                         className={`section-tab ${activeSection === 'section-financial' ? 'active' : ''}`}
                         onClick={() => setActiveSection('section-financial')}
@@ -31,26 +55,14 @@ export default function SectionNav({ activeSection, setActiveSection }) {
                         </svg>
                         BESS Financial Model
                     </button>
-                    <button
-                        className={`section-tab ${activeSection === 'section-handbook' ? 'active' : ''}`}
-                        onClick={() => setActiveSection('section-handbook')}
-                        role="tab"
-                        aria-selected={activeSection === 'section-handbook'}
-                        id="section-tab-handbook"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path
-                                d="M3 3h4l1.5 1.5L10 3h4v11h-4l-1.5 1.5L7 14H3z"
-                                stroke="currentColor"
-                                strokeWidth="1.3"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                            <path d="M8.5 4.5V14" stroke="currentColor" strokeWidth="1.3" />
-                        </svg>
-                        BESS Handbook
-                    </button>
                 </div>
+                <CurrencyConverter
+                    baseCurrency="USD"
+                    selectedCurrency={selectedCurrency}
+                    exchangeRate={exchangeRate}
+                    onCurrencyChange={onCurrencyChange}
+                    onRateChange={onRateChange}
+                />
             </div>
         </nav>
     );

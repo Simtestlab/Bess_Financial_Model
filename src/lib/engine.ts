@@ -282,8 +282,8 @@ export const DEFAULTS = {
     discountRate: 8,
 };
 
-export function buildParams(inputs) {
-    const p = {
+export function buildParams(inputs: any): any {
+    const p: any = {
         capacity: inputs.capacity,
         arbDays: inputs.arbDays,
         availability: inputs.availability / 100,

@@ -43,12 +43,15 @@ function c(name, opacity = 1) {
     return COLORS[name].replace('##', opacity);
 }
 
-export default function ChartsPanel({ model, params }) {
+export default function ChartsPanel({ model, params, currencySymbol = '$', exchangeRate = 1 }) {
     if (!model) return null;
 
     const displayN = Math.min(model.N, 10);
     const yearLabels = Array.from({ length: displayN }, (_, i) => `Year ${i + 1}`);
     const cfLabels = ['Year 0', ...model.years.map(y => `Year ${y}`)];
+
+    // Helper function for formatting currency in chart callbacks
+    const formatChartCurrency = (val) => fmtCurrency(val, currencySymbol, exchangeRate);
 
     return (
         <div className="charts-grid">
@@ -70,11 +73,11 @@ export default function ChartsPanel({ model, params }) {
                             responsive: true, maintainAspectRatio: false,
                             scales: {
                                 x: { stacked: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-                                y: { stacked: true, ticks: { color: '#94a3b8', callback: v => fmtCurrency(v) }, grid: { color: 'rgba(255,255,255,0.06)' } }
+                                y: { stacked: true, ticks: { color: '#94a3b8', callback: v => formatChartCurrency(v) }, grid: { color: 'rgba(255,255,255,0.06)' } }
                             },
                             plugins: {
                                 legend: { labels: { color: '#e2e8f0', font: { family: 'Inter' } } },
-                                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtCurrency(ctx.parsed.y)}` } }
+                                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatChartCurrency(ctx.parsed.y)}` } }
                             }
                         }}
                     />
@@ -97,11 +100,11 @@ export default function ChartsPanel({ model, params }) {
                             responsive: true, maintainAspectRatio: false,
                             scales: {
                                 x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-                                y: { ticks: { color: '#94a3b8', callback: v => fmtCurrency(v) }, grid: { color: 'rgba(255,255,255,0.06)' } }
+                                y: { ticks: { color: '#94a3b8', callback: v => formatChartCurrency(v) }, grid: { color: 'rgba(255,255,255,0.06)' } }
                             },
                             plugins: {
                                 legend: { labels: { color: '#e2e8f0', font: { family: 'Inter' } } },
-                                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtCurrency(ctx.parsed.y)}` } }
+                                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatChartCurrency(ctx.parsed.y)}` } }
                             }
                         }}
                     />
@@ -130,11 +133,11 @@ export default function ChartsPanel({ model, params }) {
                             responsive: true, maintainAspectRatio: false,
                             scales: {
                                 x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-                                y: { ticks: { color: '#94a3b8', callback: v => fmtCurrency(v) }, grid: { color: 'rgba(255,255,255,0.06)' } }
+                                y: { ticks: { color: '#94a3b8', callback: v => formatChartCurrency(v) }, grid: { color: 'rgba(255,255,255,0.06)' } }
                             },
                             plugins: {
                                 legend: { labels: { color: '#e2e8f0', font: { family: 'Inter' } } },
-                                tooltip: { callbacks: { label: ctx => `Cumulative: ${fmtCurrency(ctx.parsed.y)}` } }
+                                tooltip: { callbacks: { label: ctx => `Cumulative: ${formatChartCurrency(ctx.parsed.y)}` } }
                             }
                         }}
                     />

@@ -1,6 +1,53 @@
-'use client';
+ 'use client';
 
-function NumInput({ id, label, value, unit, onChange, step, min, max, readOnly }) {
+import { useState, useEffect, useRef } from 'react';
+
+interface NumInputProps {
+    id: string;
+    label: string;
+    value: number;
+    unit: string;
+    onChange: (val: number) => void;
+    step?: number;
+    min?: number;
+    max?: number;
+    readOnly?: boolean;
+}
+
+function NumInput({ id, label, value, unit, onChange, step, min, max, readOnly }: NumInputProps) {
+    const [text, setText] = useState<string>(value != null ? String(value) : '');
+    const commitTimerRef = useRef<any>(null);
+
+    useEffect(() => {
+        setText(value != null ? String(value) : '');
+    }, [value]);
+
+    const commit = () => {
+        const parsed = parseFloat(text);
+        if (!isNaN(parsed)) {
+            onChange(parsed);
+        } else if (text === '' || text === '-') {
+            // Allow empty/minus while typing
+        } else {
+            onChange(0);
+            setText('0');
+        }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newText = e.target.value;
+        setText(newText);
+        
+        // Auto-commit valid numbers after 300ms of no typing
+        clearTimeout(commitTimerRef.current);
+        const parsed = parseFloat(newText);
+        if (!isNaN(parsed)) {
+            commitTimerRef.current = setTimeout(() => {
+                onChange(parsed);
+            }, 300);
+        }
+    };
+
     return (
         <div className="param">
             <label htmlFor={id}>{label}</label>
@@ -11,9 +58,12 @@ function NumInput({ id, label, value, unit, onChange, step, min, max, readOnly }
                     step={step || 1}
                     min={min}
                     max={max}
-                    value={value}
+                    value={text}
                     readOnly={readOnly}
-                    onChange={e => onChange(parseFloat(e.target.value) || 0)}
+                    onChange={handleChange}
+                    onBlur={commit}
+                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    onWheel={e => (e.target as HTMLInputElement).blur()}
                 />
                 <span className="unit">{unit}</span>
             </div>
@@ -21,7 +71,17 @@ function NumInput({ id, label, value, unit, onChange, step, min, max, readOnly }
     );
 }
 
-function SliderInput({ id, label, value, onChange, min, max, step }) {
+interface SliderInputProps {
+    id: string;
+    label: string;
+    value: number;
+    onChange: (val: number) => void;
+    min: number;
+    max: number;
+    step?: number;
+}
+
+function SliderInput({ id, label, value, onChange, min, max, step }: SliderInputProps) {
     return (
         <div className="param">
             <label htmlFor={id}>{label}</label>
@@ -35,13 +95,21 @@ function SliderInput({ id, label, value, onChange, min, max, step }) {
                     value={value}
                     onChange={e => onChange(parseFloat(e.target.value))}
                 />
-                <span className="slider-val">{parseFloat(value).toFixed(1)}%</span>
+                <span className="slider-val">{value.toFixed(1)}%</span>
             </div>
         </div>
     );
 }
 
-export default function FinancialSidebar({ inputs, onInputChange, onReset, collapsed, ppaVolume }) {
+interface FinancialSidebarProps {
+    inputs: any;
+    onInputChange: (key: string, val: number) => void;
+    onReset: () => void;
+    collapsed: boolean;
+    ppaVolume: number | null;
+}
+
+export default function FinancialSidebar({ inputs, onInputChange, onReset, collapsed, ppaVolume }: FinancialSidebarProps) {
     const c = (key) => (val) => onInputChange(key, val);
 
     return (
