@@ -1,5 +1,6 @@
 /* ============================================================
    BESS Financial Model & Handbook — Design System
+   Migrated to Next.js — pixel-perfect reproduction
    ============================================================ */
 
 /* ── Tokens ─────────────────────────────────────────────────── */
@@ -185,7 +186,7 @@ body {
 }
 
 /* ============================================================
-   SIDEBAR (Financial Model)
+   SIDEBAR
    ============================================================ */
 .sidebar {
   position: fixed;
@@ -336,7 +337,8 @@ body {
   gap: 6px;
 }
 
-.input-row input {
+.input-row input,
+.input-row select {
   flex: 1;
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -356,7 +358,8 @@ body {
   -webkit-appearance: none;
 }
 
-.input-row input:focus {
+.input-row input:focus,
+.input-row select:focus {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px var(--emerald-glow);
 }
@@ -412,7 +415,7 @@ body {
 }
 
 /* ============================================================
-   MAIN CONTENT (Financial Model)
+   MAIN CONTENT
    ============================================================ */
 .main-content {
   margin-left: var(--sidebar-w);
@@ -838,660 +841,6 @@ body {
 }
 
 /* ============================================================
-   HANDBOOK SECTION
-   ============================================================ */
-
-/* Handbook layout */
-.handbook-layout {
-  display: flex;
-  width: 100%;
-  min-height: calc(100vh - var(--section-nav-h));
-}
-
-/* Table of contents sidebar */
-.handbook-toc {
-  position: fixed;
-  top: var(--section-nav-h);
-  left: 0;
-  width: 260px;
-  height: calc(100vh - var(--section-nav-h));
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  z-index: 50;
-  overflow-y: auto;
-}
-
-.toc-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 20px 20px 16px;
-  color: var(--text-secondary);
-  font-weight: 600;
-  font-size: 0.88rem;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.toc-header svg {
-  color: var(--emerald-400);
-}
-
-.toc-links {
-  display: flex;
-  flex-direction: column;
-  padding: 12px 12px 24px;
-  gap: 2px;
-}
-
-.toc-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: var(--radius-sm);
-  text-decoration: none;
-  color: var(--text-muted);
-  font-size: 0.78rem;
-  font-weight: 500;
-  transition: all 0.2s var(--ease);
-}
-
-.toc-link:hover {
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.toc-link.active {
-  color: var(--emerald-400);
-  background: rgba(52, 211, 153, 0.08);
-}
-
-.toc-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  min-width: 22px;
-  opacity: 0.6;
-}
-
-.toc-link.active .toc-num {
-  color: var(--emerald-400);
-  opacity: 1;
-}
-
-/* Handbook main content */
-.handbook-content {
-  margin-left: 260px;
-  flex: 1;
-  padding: 0;
-  max-width: 960px;
-}
-
-/* Hero section */
-.handbook-hero {
-  padding: 48px 40px 40px;
-  border-bottom: 1px solid var(--border);
-  position: relative;
-  overflow: hidden;
-}
-
-.handbook-hero::before {
-  content: '';
-  position: absolute;
-  top: -60%;
-  right: -20%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(52, 211, 153, 0.06) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.handbook-hero-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 14px;
-  background: rgba(52, 211, 153, 0.1);
-  border: 1px solid rgba(52, 211, 153, 0.2);
-  border-radius: 20px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--emerald-400);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 16px;
-}
-
-.handbook-hero h1 {
-  font-size: 2.2rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--text-primary), var(--emerald-400));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 12px;
-  line-height: 1.2;
-}
-
-.handbook-hero-sub {
-  font-size: 0.92rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  max-width: 640px;
-}
-
-.handbook-hero-sub code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.82rem;
-  background: rgba(52, 211, 153, 0.1);
-  color: var(--emerald-400);
-  padding: 2px 7px;
-  border-radius: 4px;
-}
-
-.handbook-hero-stats {
-  display: flex;
-  gap: 32px;
-  margin-top: 28px;
-}
-
-.hero-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.hero-stat-num {
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: var(--emerald-400);
-}
-
-.hero-stat-label {
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* Handbook sections */
-.hb-section {
-  padding: 40px 40px 20px;
-  border-bottom: 1px solid var(--border);
-  scroll-margin-top: calc(var(--section-nav-h) + 20px);
-}
-
-.hb-section:last-of-type {
-  border-bottom: none;
-}
-
-.hb-section-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.hb-section-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--emerald-400);
-  background: rgba(52, 211, 153, 0.1);
-  border: 1px solid rgba(52, 211, 153, 0.2);
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.hb-section-header h2 {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.hb-section-desc {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-}
-
-/* Handbook cards */
-.hb-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px;
-  margin-bottom: 16px;
-  transition: border-color 0.2s var(--ease);
-}
-
-.hb-card:hover {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.hb-card-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: var(--text-primary);
-}
-
-.hb-card-icon {
-  font-size: 1.1rem;
-}
-
-.hb-card-desc {
-  font-size: 0.82rem;
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-
-.hb-card-desc code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.78rem;
-  background: rgba(52, 211, 153, 0.1);
-  color: var(--emerald-400);
-  padding: 1px 5px;
-  border-radius: 3px;
-}
-
-/* Overview grid */
-.hb-overview-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.hb-overview-item {
-  padding: 20px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  transition: all 0.2s var(--ease);
-}
-
-.hb-overview-item:hover {
-  border-color: rgba(52, 211, 153, 0.2);
-  transform: translateY(-2px);
-}
-
-.hb-ov-icon {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
-}
-
-.hb-overview-item h4 {
-  font-size: 0.88rem;
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: var(--text-primary);
-}
-
-.hb-overview-item p {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-.hb-overview-item code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
-  background: rgba(52, 211, 153, 0.1);
-  color: var(--emerald-400);
-  padding: 1px 5px;
-  border-radius: 3px;
-}
-
-/* Parameters table */
-.hb-params-table {
-  display: flex;
-  flex-direction: column;
-}
-
-.hb-param-row {
-  display: grid;
-  grid-template-columns: 1.2fr 1.3fr 0.5fr 2fr;
-  gap: 12px;
-  padding: 10px 12px;
-  font-size: 0.78rem;
-  border-bottom: 1px solid var(--border);
-  align-items: center;
-  transition: background 0.15s var(--ease);
-}
-
-.hb-param-row:last-child {
-  border-bottom: none;
-}
-
-.hb-param-row:not(.hb-param-header):hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.hb-param-header {
-  font-weight: 600;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  border-bottom: 2px solid var(--border);
-}
-
-.hb-param-row span {
-  color: var(--text-secondary);
-}
-
-.hb-param-row code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
-  background: rgba(96, 165, 250, 0.1);
-  color: var(--blue-400);
-  padding: 2px 7px;
-  border-radius: 4px;
-}
-
-/* Formula cards */
-.hb-formula-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px 24px;
-  margin-bottom: 12px;
-  transition: all 0.2s var(--ease);
-}
-
-.hb-formula-card:hover {
-  border-color: rgba(52, 211, 153, 0.2);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
-}
-
-.hb-formula-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--emerald-400);
-  margin-bottom: 10px;
-}
-
-.hb-formula {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  padding: 12px 18px;
-  background: rgba(52, 211, 153, 0.04);
-  border: 1px solid rgba(52, 211, 153, 0.1);
-  border-radius: var(--radius-sm);
-  margin-bottom: 8px;
-  line-height: 1.6;
-  overflow-x: auto;
-}
-
-.hb-formula sub {
-  font-size: 0.72em;
-  color: var(--cyan-400);
-}
-
-.hb-formula-alt {
-  margin-top: 4px;
-}
-
-.hb-formula-note {
-  font-size: 0.76rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-  margin-top: 4px;
-  padding-left: 4px;
-}
-
-.hb-formula-highlight {
-  border-color: rgba(52, 211, 153, 0.25);
-  background: rgba(52, 211, 153, 0.04);
-}
-
-.hb-formula-highlight-warm {
-  border-color: rgba(251, 191, 36, 0.2);
-  background: rgba(251, 191, 36, 0.03);
-}
-
-.hb-formula-highlight-warm .hb-formula-label {
-  color: var(--amber-400);
-}
-
-.hb-formula-highlight-warm .hb-formula {
-  background: rgba(251, 191, 36, 0.04);
-  border-color: rgba(251, 191, 36, 0.1);
-}
-
-.hb-formula-inline-group {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 12px;
-}
-
-.hb-formula-inline-group .hb-formula-card {
-  margin-bottom: 0;
-}
-
-/* Status grid */
-.hb-status-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.hb-status-item {
-  padding: 16px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-}
-
-.hb-status-badge {
-  font-size: 0.82rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.hb-status-item p {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
-.hb-status-item p code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.68rem;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 1px 5px;
-  border-radius: 3px;
-}
-
-.hb-status-warn {
-  background: rgba(251, 191, 36, 0.05);
-  border-color: rgba(251, 191, 36, 0.15);
-}
-
-.hb-status-ok {
-  background: rgba(52, 211, 153, 0.05);
-  border-color: rgba(52, 211, 153, 0.15);
-}
-
-.hb-status-over {
-  background: rgba(96, 165, 250, 0.05);
-  border-color: rgba(96, 165, 250, 0.15);
-}
-
-/* Outputs grid */
-.hb-outputs-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.hb-output-category h4 {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--emerald-400);
-  margin-bottom: 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(52, 211, 153, 0.15);
-}
-
-.hb-output-category ul {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.hb-output-category li {
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  padding-left: 14px;
-  position: relative;
-}
-
-.hb-output-category li::before {
-  content: '›';
-  position: absolute;
-  left: 0;
-  color: var(--text-muted);
-  font-weight: 700;
-}
-
-/* Handbook footer */
-.handbook-footer {
-  padding: 32px 40px;
-  border-top: 1px solid var(--border);
-  margin-top: 20px;
-}
-
-.handbook-footer p {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.handbook-footer code {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.72rem;
-  background: rgba(52, 211, 153, 0.1);
-  color: var(--emerald-400);
-  padding: 1px 5px;
-  border-radius: 3px;
-}
-
-/* ── Responsive ─────────────────────────────────────────────── */
-@media (max-width: 1024px) {
-  .sidebar {
-    transform: translateX(calc(-1 * var(--sidebar-w)));
-  }
-
-  .sidebar.open {
-    transform: translateX(0);
-  }
-
-  .main-content {
-    margin-left: 0;
-  }
-
-  .handbook-toc {
-    display: none;
-  }
-
-  .handbook-content {
-    margin-left: 0;
-    max-width: 100%;
-  }
-
-  .hb-section {
-    padding: 28px 20px 16px;
-  }
-
-  .handbook-hero {
-    padding: 32px 20px;
-  }
-
-  .hb-overview-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .hb-status-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .hb-outputs-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .section-nav-brand {
-    display: none;
-  }
-
-  .section-nav-inner {
-    justify-content: center;
-  }
-
-  .handbook-hero h1 {
-    font-size: 1.6rem;
-  }
-
-  .handbook-hero-stats {
-    gap: 20px;
-  }
-
-  .hero-stat-num {
-    font-size: 1.2rem;
-  }
-
-  .hb-param-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 4px;
-  }
-
-  .hb-param-header {
-    display: none;
-  }
-}
-
-@media (max-width: 600px) {
-  .kpi-strip {
-    flex-direction: column;
-  }
-
-  .kpi-card {
-    min-width: 100%;
-  }
-
-  .charts-grid,
-  .sensitivity-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .hb-outputs-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .section-tab {
-    padding: 8px 14px;
-    font-size: 0.78rem;
-  }
-
-  .section-tab svg {
-    display: none;
-  }
-}
-
-/* ============================================================
    HANDBOOK LIVE STATUS BADGES
    ============================================================ */
 .hb-status-badge-live {
@@ -1521,8 +870,7 @@ body {
   border: 1px solid rgba(96, 165, 250, 0.25);
 }
 
-/* Handbook section uses the same .sidebar class as financial model.
-   The #section-handbook context adjusts positioning when that panel is active. */
+/* Handbook section sidebar & main positioning */
 #section-handbook .sidebar {
   position: fixed;
   top: var(--section-nav-h);
@@ -1539,12 +887,59 @@ body {
   min-height: calc(100vh - var(--section-nav-h));
 }
 
+/* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(calc(-1 * var(--sidebar-w)));
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
   #section-handbook .sidebar {
     transform: translateX(calc(-1 * var(--sidebar-w)));
   }
 
   #section-handbook .main-content {
     margin-left: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-nav-brand {
+    display: none;
+  }
+
+  .section-nav-inner {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .kpi-strip {
+    flex-direction: column;
+  }
+
+  .kpi-card {
+    min-width: 100%;
+  }
+
+  .charts-grid,
+  .sensitivity-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-tab {
+    padding: 8px 14px;
+    font-size: 0.78rem;
+  }
+
+  .section-tab svg {
+    display: none;
   }
 }

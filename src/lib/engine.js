@@ -1,6 +1,7 @@
 /* ============================================================
    BESS Financial Model — Calculation Engine (v2)
    ============================================================
+   Pure computation module — no DOM dependencies.
    Implements the revised formula set with:
      • Separate charge / discharge pricing
      • Insurance, Variable O&M, Fixed O&M with inflation
@@ -9,90 +10,16 @@
      • Unlevered & levered cash flows
    ============================================================ */
 
-'use strict';
-
-// ── Collect parameters from the DOM ─────────────────────────
-function collectParams() {
-    const v = (id) => parseFloat(document.getElementById(id).value) || 0;
-    return {
-        // Technical
-        capacity: v('inp-capacity'),       // MWh usable
-        arbDays: v('inp-arb-days'),        // days/yr
-        availability: v('inp-availability') / 100,
-        // cyclesPerDay removed — energyCharged no longer uses cycles per day
-        rte: v('inp-rte') / 100,       // round-trip efficiency
-        chargePrice: v('inp-charge-price'),    // $/MWh
-        dischargePrice: v('inp-discharge-price'), // $/MWh
-
-        // Revenue
-        // PPA volume is now auto-calculated from technical limits
-        cyclesPerDay: v('inp-cycles-per-day'),
-        // ppaVolume will be calculated below after other params are set
-        ppaPrice: v('inp-ppa-price'),
-        ppaEsc: v('inp-ppa-esc') / 100,
-        ancillaryRev: v('inp-ancillary'),
-        otherRev: v('inp-other-rev'),
-
-        // Cost
-        capex: v('inp-capex'),
-        insuranceRate: v('inp-insurance') / 100,
-        varOmRate: v('inp-var-om') / 100,
-        fixedOm: v('inp-fixed-om'),
-        adminCost: v('inp-admin-cost'),
-        preventiveMaintenance: v('inp-preventive-maintenance'),
-        inflationRate: v('inp-inflation') / 100,
-
-        // Financial
-        projectLife: Math.max(5, Math.round(v('inp-project-life'))),
-        // deprPeriod removed - now using projectLife for depreciation
-        // Tax and discount rates read from UI
-        taxRate: v('inp-tax-rate') / 100,
-        discountRate: v('inp-discount-rate') / 100,
-
-        // Debt
-        debtAmount: v('inp-debt-amount'),
-        debtRate: v('inp-debt-rate') / 100,
-        loanTerm: Math.max(1, Math.round(v('inp-loan-term'))),
-
-        // Replacement & Degradation (commented out)
-        // batReplYear: Math.max(1, Math.round(v('inp-repl-year'))),
-        // batReplCost: v('inp-repl-cost'),
-            degradation: (document.getElementById('inp-degradation') ? (v('inp-degradation') / 100) : 0.025),
-    };
-}
-
-// Post-process params to compute derived fields that depend on multiple inputs
-function finalizeParams(p) {
-    // Ensure rte and availability are decimals (collectParams returns them as decimals already)
-    const cycles = p.cyclesPerDay || 0;
-    const ppaVol = p.capacity * cycles * p.arbDays * p.rte * p.availability;
-    p.ppaVolume = Math.round(ppaVol);
-    // Update UI display for the calculated PPA volume (read-only input)
-    const el = document.getElementById('inp-ppa-vol');
-    if (el) el.value = p.ppaVolume;
-    return p;
-}
-
 // ── Run the full financial model ────────────────────────────
-function runModel(p) {
+export function runModel(p) {
     const N = p.projectLife;
     const years = Array.from({ length: N }, (_, i) => i + 1);
 
-    // ── Effective capacity (constant — degradation & replacement commented out) ──
-        const effCapacity = [p.capacity];
-        for (let y = 1; y < N; y++) {
-            // Apply annual degradation to effective capacity
-            effCapacity[y] = effCapacity[y - 1] * (1 - p.degradation);
-        }
-    // Original code with degradation:
-    // const effCapacity = [p.capacity];
-    // for (let y = 1; y < N; y++) {
-    //     if (y + 1 === p.batReplYear) {
-    //         effCapacity[y] = p.capacity; // reset at replacement
-    //     } else {
-    //         effCapacity[y] = effCapacity[y - 1] * (1 - p.degradation);
-    //     }
-    // }
+    // ── Effective capacity (with degradation) ──
+    const effCapacity = [p.capacity];
+    for (let y = 1; y < N; y++) {
+        effCapacity[y] = effCapacity[y - 1] * (1 - p.degradation);
+    }
 
     // ── Energy calculations ─────────────────────────────────
     const energyCharged = years.map((_, y) =>
@@ -129,19 +56,9 @@ function runModel(p) {
     );
 
     // ── Depreciation (straight-line over project life)
-    // Changed to spread initial CAPEX evenly across the full project life
     const annualDepr = p.capex / p.projectLife;
     const depreciation = years.map((_, y) => y < p.projectLife ? annualDepr : 0);
-
-    // Replacement battery depreciation (commented out)
-    // const replDeprAnnual = p.batReplCost / p.deprPeriod;
-    // const replDepr = years.map((_, y) => {
-    //     const replIdx = p.batReplYear - 1;
-    //     if (y >= replIdx && y < replIdx + p.deprPeriod) return replDeprAnnual;
-    //     return 0;
-    // });
     const totalDepr = depreciation;
-    // Original: const totalDepr = years.map((_, y) => depreciation[y] + replDepr[y]);
 
     // ── Income Statement ────────────────────────────────────
     const ebitda = years.map((_, y) => totalRevenue[y] - totalOpex[y]);
@@ -171,12 +88,8 @@ function runModel(p) {
     const netIncome = years.map((_, y) => ebt[y] - tax[y]);
 
     // ── Cash Flow — Investing Activities ────────────────────
-    // Battery replacement (commented out)
     const batRepl = years.map(() => 0);
-    // Original: const batRepl = years.map((_, y) => (y + 1 === p.batReplYear) ? p.batReplCost : 0);
-    // Equipment replacement reserve removed; battery replacement also commented out.
     const totalCapex = years.map(() => 0);
-    // Original: const totalCapex = years.map((_, y) => batRepl[y]);
 
     // ── Unlevered (Project) Cash Flow ───────────────────────
     const unlNI = years.map((_, y) => ebit[y] * (1 - p.taxRate));
@@ -212,21 +125,15 @@ function runModel(p) {
 
     return {
         N, years, effCapacity, energyCharged, energySold,
-        // Revenue
         sellRevenue, chargeCost, arbRevenue, ppaRevenue,
         ancillaryRev, otherRevenue, totalRevenue,
-        // OPEX
         insurance, varOm, fixedOm, totalOpex,
-        // Income Statement
         ebitda, totalDepr, ebit, debtInterest,
         ebt, tax, netIncome,
-        // Cash Flow
         batRepl, totalCapex,
         unlNI, unlOCF, unlFCF, projectCF, cumCF,
         levOCF, levFCF, equityCF,
-        // Debt
         debtOpening, debtPrincipal, debtClosing,
-        // Metrics
         irr, npv, payback, equityIRR, equityNPV,
     };
 }
@@ -236,7 +143,7 @@ function runModel(p) {
    Financial Functions
    ────────────────────────────────────────────────────────────── */
 
-function calcIRR(cashFlows, guess = 0.1, maxIter = 1000, tol = 1e-8) {
+export function calcIRR(cashFlows, guess = 0.1, maxIter = 1000, tol = 1e-8) {
     let rate = guess;
     for (let i = 0; i < maxIter; i++) {
         let npv = 0, dnpv = 0;
@@ -255,7 +162,7 @@ function calcIRR(cashFlows, guess = 0.1, maxIter = 1000, tol = 1e-8) {
     return rate;
 }
 
-function calcNPV(rate, cashFlows) {
+export function calcNPV(rate, cashFlows) {
     let npv = 0;
     for (let t = 0; t < cashFlows.length; t++) {
         npv += cashFlows[t] / Math.pow(1 + rate, t);
@@ -263,7 +170,7 @@ function calcNPV(rate, cashFlows) {
     return npv;
 }
 
-function calcPayback(cashFlows) {
+export function calcPayback(cashFlows) {
     let cum = 0;
     for (let t = 0; t < cashFlows.length; t++) {
         cum += cashFlows[t];
@@ -283,7 +190,7 @@ function calcPayback(cashFlows) {
    Sensitivity Analysis
    ────────────────────────────────────────────────────────────── */
 
-function runSensitivity(baseParams, paramKey, multipliers) {
+export function runSensitivity(baseParams, paramKey, multipliers) {
     return multipliers.map(m => {
         const p = { ...baseParams };
         p[paramKey] = baseParams[paramKey] * m;
@@ -292,7 +199,7 @@ function runSensitivity(baseParams, paramKey, multipliers) {
     });
 }
 
-function runDegradationSensitivity(baseParams, rates) {
+export function runDegradationSensitivity(baseParams, rates) {
     return rates.map(r => {
         const p = { ...baseParams, degradation: r };
         const model = runModel(p);
@@ -304,7 +211,7 @@ function runDegradationSensitivity(baseParams, rates) {
     });
 }
 
-function runEfficiencySensitivity(baseParams, efficiencies) {
+export function runEfficiencySensitivity(baseParams, efficiencies) {
     return efficiencies.map(eff => {
         const p = { ...baseParams, rte: eff };
         const model = runModel(p);
@@ -316,8 +223,7 @@ function runEfficiencySensitivity(baseParams, efficiencies) {
     });
 }
 
-// Tornado: vary each key param ±10% and measure IRR impact
-function runTornadoSensitivity(baseParams) {
+export function runTornadoSensitivity(baseParams) {
     const baseModel = runModel(baseParams);
     const baseIRR = baseModel.irr;
     const params = [
@@ -335,4 +241,75 @@ function runTornadoSensitivity(baseParams) {
         const irrHigh = runModel(pHigh).irr;
         return { label, baseIRR, irrLow, irrHigh };
     });
+}
+
+
+/* ──────────────────────────────────────────────────────────────
+   Parameter Helpers
+   ────────────────────────────────────────────────────────────── */
+
+export function computePPAVolume(params) {
+    const cycles = params.cyclesPerDay || 0;
+    return Math.round(params.capacity * cycles * params.arbDays * params.rte * params.availability);
+}
+
+export const DEFAULTS = {
+    capacity: 8.5,
+    arbDays: 280,
+    availability: 98,
+    rte: 90,
+    chargePrice: 30,
+    dischargePrice: 75,
+    ppaVol: 3500,
+    ppaPrice: 80,
+    ppaEsc: 3,
+    ancillary: 120000,
+    otherRev: 50000,
+    capex: 2750000,
+    insurance: 0.5,
+    varOm: 5,
+    fixedOm: 299000,
+    inflation: 2,
+    adminCost: 20000,
+    preventiveMaintenance: 30000,
+    projectLife: 25,
+    degradation: 2.5,
+    cyclesPerDay: 1.5,
+    debtAmount: 1500000,
+    debtRate: 5,
+    loanTerm: 10,
+    taxRate: 25,
+    discountRate: 8,
+};
+
+export function buildParams(inputs) {
+    const p = {
+        capacity: inputs.capacity,
+        arbDays: inputs.arbDays,
+        availability: inputs.availability / 100,
+        cyclesPerDay: inputs.cyclesPerDay,
+        rte: inputs.rte / 100,
+        chargePrice: inputs.chargePrice,
+        dischargePrice: inputs.dischargePrice,
+        ppaPrice: inputs.ppaPrice,
+        ppaEsc: inputs.ppaEsc / 100,
+        ancillaryRev: inputs.ancillary,
+        otherRev: inputs.otherRev,
+        capex: inputs.capex,
+        insuranceRate: inputs.insurance / 100,
+        varOmRate: inputs.varOm / 100,
+        fixedOm: inputs.fixedOm,
+        adminCost: inputs.adminCost,
+        preventiveMaintenance: inputs.preventiveMaintenance,
+        inflationRate: inputs.inflation / 100,
+        projectLife: Math.max(5, Math.round(inputs.projectLife)),
+        taxRate: inputs.taxRate / 100,
+        discountRate: inputs.discountRate / 100,
+        debtAmount: inputs.debtAmount,
+        debtRate: inputs.debtRate / 100,
+        loanTerm: Math.max(1, Math.round(inputs.loanTerm)),
+        degradation: inputs.degradation / 100,
+    };
+    p.ppaVolume = computePPAVolume(p);
+    return p;
 }
