@@ -107,10 +107,16 @@ interface FinancialSidebarProps {
     onReset: () => void;
     collapsed: boolean;
     ppaVolume: number | null;
+    currencySymbol: string;
+    exchangeRate: number;
 }
 
-export default function FinancialSidebar({ inputs, onInputChange, onReset, collapsed, ppaVolume }: FinancialSidebarProps) {
+export default function FinancialSidebar({ inputs, onInputChange, onReset, collapsed, ppaVolume, currencySymbol, exchangeRate }: FinancialSidebarProps) {
+    // Regular callback for non-currency fields
     const c = (key) => (val) => onInputChange(key, val);
+    
+    // Currency callback: convert from selected currency back to USD before storing
+    const cc = (key) => (val) => onInputChange(key, val / exchangeRate);
 
     return (
         <aside id="sidebar" className={`sidebar ${collapsed ? 'collapsed' : ''} ${!collapsed ? 'open' : ''}`}>
@@ -145,8 +151,8 @@ export default function FinancialSidebar({ inputs, onInputChange, onReset, colla
                         <SliderInput id="inp-degradation" label="Annual Degradation" value={inputs.degradation} min={0} max={10} step={0.1} onChange={c('degradation')} />
 
                         <h4 className="sub-heading">Energy Pricing</h4>
-                        <NumInput id="inp-charge-price" label="Charge Price" value={inputs.chargePrice} unit="$/MWh" step={1} min={0} onChange={c('chargePrice')} />
-                        <NumInput id="inp-discharge-price" label="Discharge Price" value={inputs.dischargePrice} unit="$/MWh" step={1} min={0} onChange={c('dischargePrice')} />
+                        <NumInput id="inp-charge-price" label="Charge Price" value={inputs.chargePrice * exchangeRate} unit={`${currencySymbol}/MWh`} step={exchangeRate >= 50 ? 10 : 1} min={0} onChange={cc('chargePrice')} />
+                        <NumInput id="inp-discharge-price" label="Discharge Price" value={inputs.dischargePrice * exchangeRate} unit={`${currencySymbol}/MWh`} step={exchangeRate >= 50 ? 10 : 1} min={0} onChange={cc('dischargePrice')} />
                     </div>
                 </details>
 
@@ -156,12 +162,12 @@ export default function FinancialSidebar({ inputs, onInputChange, onReset, colla
                     <div className="param-grid">
                         <h4 className="sub-heading">PPA Contract</h4>
                         <NumInput id="inp-ppa-vol" label="PPA Volume" value={ppaVolume || 0} unit="MWh/yr" readOnly onChange={() => { }} />
-                        <NumInput id="inp-ppa-price" label="PPA Price (Year 1)" value={inputs.ppaPrice} unit="$/MWh" step={1} min={0} onChange={c('ppaPrice')} />
+                        <NumInput id="inp-ppa-price" label="PPA Price (Year 1)" value={inputs.ppaPrice * exchangeRate} unit={`${currencySymbol}/MWh`} step={exchangeRate >= 50 ? 10 : 1} min={0} onChange={cc('ppaPrice')} />
                         <SliderInput id="inp-ppa-esc" label="PPA Escalation" value={inputs.ppaEsc} min={0} max={10} step={0.1} onChange={c('ppaEsc')} />
 
                         <h4 className="sub-heading">Other Revenue</h4>
-                        <NumInput id="inp-ancillary" label="Ancillary Services" value={inputs.ancillary} unit="$/yr" step={1000} min={0} onChange={c('ancillary')} />
-                        <NumInput id="inp-other-rev" label="Grid Services" value={inputs.otherRev} unit="$/yr" step={1000} min={0} onChange={c('otherRev')} />
+                        <NumInput id="inp-ancillary" label="Ancillary Services" value={inputs.ancillary * exchangeRate} unit={`${currencySymbol}/yr`} step={exchangeRate >= 50 ? 10000 : 1000} min={0} onChange={cc('ancillary')} />
+                        <NumInput id="inp-other-rev" label="Grid Services" value={inputs.otherRev * exchangeRate} unit={`${currencySymbol}/yr`} step={exchangeRate >= 50 ? 10000 : 1000} min={0} onChange={cc('otherRev')} />
                     </div>
                 </details>
 
@@ -169,16 +175,16 @@ export default function FinancialSidebar({ inputs, onInputChange, onReset, colla
                 <details className="param-group">
                     <summary><span className="group-icon">🏗️</span> Cost &amp; Investment</summary>
                     <div className="param-grid">
-                        <NumInput id="inp-capex" label="Total CAPEX" value={inputs.capex} unit="$" step={10000} onChange={c('capex')} />
+                        <NumInput id="inp-capex" label="Total CAPEX" value={inputs.capex * exchangeRate} unit={currencySymbol} step={exchangeRate >= 50 ? 100000 : 10000} onChange={cc('capex')} />
                         <NumInput id="inp-project-life" label="Project Life" value={inputs.projectLife} unit="years" step={1} min={5} max={40} onChange={c('projectLife')} />
                         <SliderInput id="inp-insurance" label="Insurance Rate" value={inputs.insurance} min={0} max={3} step={0.1} onChange={c('insurance')} />
                         <SliderInput id="inp-var-om" label="Variable O&M Rate" value={inputs.varOm} min={0} max={20} step={0.5} onChange={c('varOm')} />
-                        <NumInput id="inp-fixed-om" label="Fixed O&M" value={inputs.fixedOm} unit="$/yr" step={1000} onChange={c('fixedOm')} />
+                        <NumInput id="inp-fixed-om" label="Fixed O&M" value={inputs.fixedOm * exchangeRate} unit={`${currencySymbol}/yr`} step={exchangeRate >= 50 ? 10000 : 1000} onChange={cc('fixedOm')} />
                         <SliderInput id="inp-inflation" label="Inflation Rate" value={inputs.inflation} min={0} max={10} step={0.1} onChange={c('inflation')} />
 
                         <h4 className="sub-heading">OPEX Additions</h4>
-                        <NumInput id="inp-admin-cost" label="Admin Cost" value={inputs.adminCost} unit="$/yr" step={1000} onChange={c('adminCost')} />
-                        <NumInput id="inp-preventive-maintenance" label="Preventive Maintenance" value={inputs.preventiveMaintenance} unit="$/yr" step={1000} onChange={c('preventiveMaintenance')} />
+                        <NumInput id="inp-admin-cost" label="Admin Cost" value={inputs.adminCost * exchangeRate} unit={`${currencySymbol}/yr`} step={exchangeRate >= 50 ? 10000 : 1000} onChange={cc('adminCost')} />
+                        <NumInput id="inp-preventive-maintenance" label="Preventive Maintenance" value={inputs.preventiveMaintenance * exchangeRate} unit={`${currencySymbol}/yr`} step={exchangeRate >= 50 ? 10000 : 1000} onChange={cc('preventiveMaintenance')} />
                     </div>
                 </details>
 
@@ -186,7 +192,7 @@ export default function FinancialSidebar({ inputs, onInputChange, onReset, colla
                 <details className="param-group">
                     <summary><span className="group-icon">💳</span> Debt Financing</summary>
                     <div className="param-grid">
-                        <NumInput id="inp-debt-amount" label="Debt Amount" value={inputs.debtAmount} unit="$" step={10000} onChange={c('debtAmount')} />
+                        <NumInput id="inp-debt-amount" label="Debt Amount" value={inputs.debtAmount * exchangeRate} unit={currencySymbol} step={exchangeRate >= 50 ? 100000 : 10000} onChange={cc('debtAmount')} />
                         <SliderInput id="inp-debt-rate" label="Interest Rate" value={inputs.debtRate} min={0} max={15} step={0.1} onChange={c('debtRate')} />
                         <NumInput id="inp-loan-term" label="Loan Term" value={inputs.loanTerm} unit="years" step={1} min={1} max={30} onChange={c('loanTerm')} />
 

@@ -71,6 +71,8 @@ export default function FinancialSection() {
                 onReset={handleReset}
                 collapsed={sidebarCollapsed}
                 ppaVolume={params ? params.ppaVolume : 0}
+                currencySymbol={currencySymbol}
+                exchangeRate={exchangeRate}
             />
             <FinancialMain
                 model={model}

@@ -7,26 +7,14 @@ import { getCurrencyInfo } from '@/lib/currency';
 import { fmtCurrency } from '@/lib/formatters';
 
 const STORAGE_KEY = 'bess-sizing-inputs-v3';
-const SECTIONS = [
-    { id: 'cell', label: '🔬 Cell', icon: '🔬' },
-    { id: 'module', label: '🧩 Module', icon: '🧩' },
-    { id: 'pack', label: '📦 Pack / Rack', icon: '📦' },
-    { id: 'system', label: '🏗️ System', icon: '🏗️' },
-    { id: 'bop', label: '⚡ BOP', icon: '⚡' },
-    { id: 'summary', label: '📊 Summary', icon: '📊' },
-] as const;
 
 function saveInputs(inputs: any) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(inputs)); } catch { }
 }
 function loadInputs(): any | null {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
+    try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
 }
 
-/* ── Formatting helpers ─────────────────────────────────────── */
 function fmt(n: number | null | undefined, digits = 1): string {
     if (n == null || isNaN(n)) return '--';
     return n.toLocaleString('en-IN', { minimumFractionDigits: digits, maximumFractionDigits: digits });
@@ -36,33 +24,24 @@ function fmtInt(n: number | null | undefined): string {
     return Math.round(n).toLocaleString('en-IN');
 }
 
-/* ── NumInput with debounced commit ─────────────────────────── */
-interface NumInputProps {
-    id: string; label: string; value: number; unit: string;
-    onChange: (v: number) => void;
-    step?: number; min?: number; max?: number;
-}
-function NumInput({ id, label, value, unit, onChange, step, min, max }: NumInputProps) {
-    const [text, setText] = useState(value != null ? String(value) : '');
+/* ── NumInput ───────────────────────────────────────────────── */
+function NumInput({ id, label, value, unit, onChange, step, min, max, displayRate }:
+    { id: string; label: string; value: number; unit: string; onChange: (v: number) => void; step?: number; min?: number; max?: number; displayRate?: number }) {
+    const r = displayRate || 1;
+    const [text, setText] = useState(String(Math.round(value * r * 100) / 100));
     const timer = useRef<any>(null);
-    useEffect(() => { setText(value != null ? String(value) : ''); }, [value]);
-    const commit = () => {
-        const p = parseFloat(text);
-        if (!isNaN(p)) onChange(p);
-        else if (text !== '' && text !== '-') { onChange(0); setText('0'); }
-    };
+    useEffect(() => { setText(String(Math.round(value * r * 100) / 100)); }, [value, r]);
+    const commit = () => { const p = parseFloat(text); if (!isNaN(p)) onChange(p / r); else { onChange(0); setText('0'); } };
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const t = e.target.value; setText(t);
-        clearTimeout(timer.current);
-        const p = parseFloat(t);
-        if (!isNaN(p)) timer.current = setTimeout(() => onChange(p), 300);
+        const t = e.target.value; setText(t); clearTimeout(timer.current);
+        const p = parseFloat(t); if (!isNaN(p)) timer.current = setTimeout(() => onChange(p / r), 300);
     };
     return (
         <div className="bess-field">
             <label htmlFor={id}>{label}</label>
             <div className="bess-field-row">
-                <input id={id} type="number" step={step || 1} min={min} max={max}
-                    value={text} onChange={handleChange} onBlur={commit}
+                <input id={id} type="number" step={step || 1} min={min} max={max} value={text}
+                    onChange={handleChange} onBlur={commit}
                     onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
                     onWheel={e => (e.target as HTMLInputElement).blur()} />
                 <span className="bess-unit">{unit}</span>
@@ -71,42 +50,76 @@ function NumInput({ id, label, value, unit, onChange, step, min, max }: NumInput
     );
 }
 
-/* ── CellInput — tiny input for inside table cells ──────────── */
-interface CellInputProps {
-    value: number; onChange: (v: number) => void;
-    step?: number; min?: number; style?: React.CSSProperties;
-}
-function CellInput({ value, onChange, step, min, style }: CellInputProps) {
-    const [text, setText] = useState(value != null ? String(value) : '');
+/* ── CellInput ──────────────────────────────────────────────── */
+function CellInput({ value, onChange, step, min, displayRate }:
+    { value: number; onChange: (v: number) => void; step?: number; min?: number; displayRate?: number }) {
+    const r = displayRate || 1;
+    const [text, setText] = useState(String(Math.round(value * r * 100) / 100));
     const timer = useRef<any>(null);
-    useEffect(() => { setText(value != null ? String(value) : ''); }, [value]);
-    const commit = () => {
-        const p = parseFloat(text);
-        if (!isNaN(p)) onChange(p);
-        else { onChange(0); setText('0'); }
-    };
+    useEffect(() => { setText(String(Math.round(value * r * 100) / 100)); }, [value, r]);
+    const commit = () => { const p = parseFloat(text); if (!isNaN(p)) onChange(p / r); else { onChange(0); setText('0'); } };
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const t = e.target.value; setText(t);
-        clearTimeout(timer.current);
-        const p = parseFloat(t);
-        if (!isNaN(p)) timer.current = setTimeout(() => onChange(p), 300);
+        const t = e.target.value; setText(t); clearTimeout(timer.current);
+        const p = parseFloat(t); if (!isNaN(p)) timer.current = setTimeout(() => onChange(p / r), 300);
     };
     return (
-        <input className="bom-cell-input" type="number" step={step || 1} min={min}
-            value={text} onChange={handleChange} onBlur={commit}
+        <input className="bom-cell-input" type="number" step={step || 1} min={min} value={text}
+            onChange={handleChange} onBlur={commit}
             onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-            onWheel={e => (e.target as HTMLInputElement).blur()}
-            style={style} />
+            onWheel={e => (e.target as HTMLInputElement).blur()} />
     );
 }
 
-/* ── Result row helper ──────────────────────────────────────── */
-function ResultRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+/* ── Metric Row ─────────────────────────────────────────────── */
+function MRow({ label, value, cls, total }: { label: string; value: string; cls?: string; total?: boolean }) {
     return (
-        <tr className={highlight ? 'row-total' : ''}>
-            <td>{label}</td>
-            <td>{value}</td>
-        </tr>
+        <div className={`metric-row${total ? ' total' : ''}`}>
+            <span className="metric-label">{label}</span>
+            <span className={`metric-val ${cls || ''}`}>{value}</span>
+        </div>
+    );
+}
+
+/* ── Section Card ───────────────────────────────────────────── */
+function SCard({ title, children, detail, onEdit }:
+    { title: string; children: React.ReactNode; detail?: React.ReactNode; onEdit?: () => void }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <div className="s-card">
+            <div className="s-card-head">
+                <span className="s-card-title">{title}</span>
+                <div className="s-card-actions">
+                    {onEdit && <button className="s-card-btn" title="Edit" onClick={onEdit}>✏️</button>}
+                    {detail && <button className="s-card-btn" title={open ? 'Collapse' : 'Details'} onClick={() => setOpen(p => !p)}
+                        style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}>▾</button>}
+                </div>
+            </div>
+            <div className="s-card-body">{children}</div>
+            {detail && <div className={`s-expand${open ? ' open' : ''}`}><div className="s-expand-inner">{detail}</div></div>}
+        </div>
+    );
+}
+
+/* ── Edit Modal ─────────────────────────────────────────────── */
+function EditModal({ title, left, right, onClose }:
+    { title: string; left: React.ReactNode; right: React.ReactNode; onClose: () => void }) {
+    useEffect(() => {
+        const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
+    }, [onClose]);
+    return (
+        <div className="edit-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+            <div className="edit-panel">
+                <div className="edit-left">
+                    <div className="edit-left-head"><h3>{title} — Inputs</h3></div>
+                    <div className="edit-left-scroll">{left}</div>
+                </div>
+                <div className="edit-right">
+                    <div className="edit-right-head"><h3>Live Preview</h3><button className="btn-close" onClick={onClose}>✕ Close</button></div>
+                    <div className="edit-right-scroll">{right}</div>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -116,25 +129,31 @@ function ResultRow({ label, value, highlight }: { label: string; value: string; 
 export default function HandbookSection() {
     const [inputs, setInputs] = useState({ ...ALL_DEFAULTS });
     const [outputs, setOutputs] = useState<ReturnType<typeof calculateAll> | null>(null);
-    const [activeTab, setActiveTab] = useState<string>('cell');
+    const [editSection, setEditSection] = useState<string | null>(null);
     const timerRef = useRef<any>(null);
 
-    const { selectedCurrency, exchangeRate } = useCurrency();
+    const { selectedCurrency } = useCurrency();
     const cInfo = getCurrencyInfo(selectedCurrency);
     const sym = cInfo?.symbol || '$';
-    const fc = (v: number) => fmtCurrency(v, sym, exchangeRate);
+    const [bessRate, setBessRate] = useState<number>(1);
+    useEffect(() => {
+        if (selectedCurrency === 'INR') { setBessRate(1); return; }
+        let cancelled = false;
+        (async () => {
+            try { const { getExchangeRate } = await import('@/lib/currency'); const rate = await getExchangeRate('INR', selectedCurrency); if (!cancelled) setBessRate(rate); }
+            catch { if (!cancelled) setBessRate(1); }
+        })();
+        return () => { cancelled = true; };
+    }, [selectedCurrency]);
+    const fc = (v: number) => fmtCurrency(v, sym, bessRate);
 
     useEffect(() => {
         const saved = loadInputs();
         const merged = saved ? { ...ALL_DEFAULTS, ...saved } : { ...ALL_DEFAULTS };
-        setInputs(merged);
-        setOutputs(calculateAll(merged));
+        setInputs(merged); setOutputs(calculateAll(merged));
     }, []);
 
-    const recalc = useCallback((cur: typeof ALL_DEFAULTS) => {
-        saveInputs(cur); setOutputs(calculateAll(cur));
-    }, []);
-
+    const recalc = useCallback((cur: typeof ALL_DEFAULTS) => { saveInputs(cur); setOutputs(calculateAll(cur)); }, []);
     const set = useCallback((key: string, val: number | string) => {
         setInputs(prev => {
             const next = { ...prev, [key]: val };
@@ -143,381 +162,343 @@ export default function HandbookSection() {
             return next;
         });
     }, [recalc]);
-
     const c = (key: string) => (val: number) => set(key, val);
-
     const handleReset = useCallback(() => {
-        const d = { ...ALL_DEFAULTS };
-        setInputs(d); localStorage.removeItem(STORAGE_KEY); recalc(d);
+        const d = { ...ALL_DEFAULTS }; setInputs(d); localStorage.removeItem(STORAGE_KEY); recalc(d);
     }, [recalc]);
 
     const o = outputs;
 
-    /* ── Render ──────────────────────────────────────────────── */
     return (
         <main className="bess-layout">
-            {/* Top KPI Strip */}
-            <header className="bess-kpi-bar">
-                <div className="kpi-strip">
-                    <div className="kpi-card kpi-irr">
-                        <span className="kpi-label">Total DC Energy</span>
-                        <span className="kpi-value">{o ? fmt(o.sysOut.totalDCEnergy, 1) + ' kWh' : '--'}</span>
+            {/* ═══ STICKY KPI HEADER ═══ */}
+            <header className="bess-kpi-header">
+                <div className="bess-kpi-inner">
+                    <div className="bess-kpi-item">
+                        <span className="bess-kpi-label">System Power</span>
+                        <span className="bess-kpi-val">{fmt(inputs.systemMW, 1)} MW</span>
                     </div>
-                    <div className="kpi-card kpi-npv">
-                        <span className="kpi-label">Delivered AC</span>
-                        <span className="kpi-value">{o ? fmt(o.sysOut.deliveredACEnergy, 1) + ' kWh' : '--'}</span>
+                    <div className="bess-kpi-item">
+                        <span className="bess-kpi-label">Delivered AC</span>
+                        <span className="bess-kpi-val">{o ? fmt(o.sysOut.deliveredACEnergy, 0) + ' kWh' : '--'}</span>
                     </div>
-                    <div className="kpi-card kpi-payback">
-                        <span className="kpi-label">Total Racks</span>
-                        <span className="kpi-value">{o ? fmtInt(o.sysOut.numberOfRacks) : '--'}</span>
+                    <div className="bess-kpi-item">
+                        <span className="bess-kpi-label">Total System Cost</span>
+                        <span className="bess-kpi-val green">{o ? fc(o.summary.totalSystemCost) : '--'}</span>
                     </div>
-                    <div className="kpi-card kpi-rev">
-                        <span className="kpi-label">Total System Cost</span>
-                        <span className="kpi-value">{o ? fc(o.summary.totalSystemCost) : '--'}</span>
+                    <div className="bess-kpi-item">
+                        <span className="bess-kpi-label">Cost / kWh</span>
+                        <span className="bess-kpi-val orange">{o ? fc(o.summary.costPerKWh) : '--'}</span>
+                    </div>
+                    <div className="bess-kpi-actions">
+                        <button className="btn-reset" title="Reset all" onClick={handleReset}>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 2v5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M3.05 10A6 6 0 1 0 4.2 4.2L2 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                            Reset
+                        </button>
                     </div>
                 </div>
-                <button className="btn-reset" title="Reset all to defaults" onClick={handleReset}>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M2 2v5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M3.05 10A6 6 0 1 0 4.2 4.2L2 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Reset
-                </button>
             </header>
 
-            {/* Section Tabs */}
-            <nav className="bess-section-tabs" role="tablist">
-                {SECTIONS.map(s => (
-                    <button key={s.id} role="tab" aria-selected={activeTab === s.id}
-                        className={`bess-tab ${activeTab === s.id ? 'active' : ''}`}
-                        onClick={() => setActiveTab(s.id)}>
-                        {s.label}
-                    </button>
-                ))}
-            </nav>
+            {/* ═══ MAIN CONTENT ═══ */}
+            <div className="bess-content">
+                <div className="bess-content-inner">
 
-            {/* Section Content */}
-            <div className="bess-section-content">
+                    {/* ── Row 1: Cell · Module · Rack ── */}
+                    <div className="bess-row bess-row-3">
+                        {/* CELL */}
+                        <SCard title="Cell" onEdit={() => setEditSection('cell')}
+                            detail={<>
+                                <div className="s-expand-title">Technical Parameters</div>
+                                <div className="metric-list">
+                                    <MRow label="Depth of Discharge" value={fmt(inputs.dod, 2)} />
+                                    <MRow label="Efficiency" value={fmt(inputs.efficiency, 2)} />
+                                    <MRow label="End of Life (EOL)" value={fmt(inputs.eol, 2)} />
+                                    <MRow label="Degradation Factor" value={fmt(inputs.dod * inputs.efficiency * inputs.eol, 4)} cls="dim" />
+                                    <MRow label="Formula" value="Capacity × Voltage" cls="dim" />
+                                </div>
+                            </>}>
+                            <div className="metric-list">
+                                <MRow label="Chemistry" value={inputs.cellChemistry} />
+                                <MRow label="Capacity" value={fmt(inputs.cellCapacity, 0) + ' Ah'} />
+                                <MRow label="Nominal Voltage" value={fmt(inputs.nominalVoltage, 1) + ' V'} />
+                                <MRow label="Cell Energy" value={o ? fmt(o.cellOut.cellEnergy, 1) + ' Wh' : '--'} cls="green" />
+                                <MRow label="Cell Cost" value={fc(inputs.cellCost)} cls="orange" />
+                            </div>
+                        </SCard>
 
-                {/* ═══ CELL ═══════════════════════════════════════ */}
-                {activeTab === 'cell' && (
-                    <div className="bess-section-panel" key="cell">
-                        <div className="bess-split">
-                            <div className="bess-inputs-card">
-                                <h3>🔬 Cell Inputs</h3>
-                                <div className="bess-field">
-                                    <label htmlFor="hb-cellChemistry">Cell Chemistry</label>
-                                    <div className="bess-field-row">
-                                        <select id="hb-cellChemistry" value={inputs.cellChemistry}
-                                            onChange={e => set('cellChemistry', e.target.value)}>
-                                            <option value="LFP">LFP</option>
-                                            <option value="NMC">NMC</option>
-                                            <option value="NCA">NCA</option>
-                                            <option value="LTO">LTO</option>
-                                        </select>
+                        {/* MODULE */}
+                        <SCard title="Module" onEdit={() => setEditSection('module')}
+                            detail={<>
+                                <div className="s-expand-title">Component Breakdown</div>
+                                <table className="s-detail-table"><thead><tr><th>Component</th><th>Total</th></tr></thead><tbody>
+                                    {o && o.modOut.items.map((it, i) => <tr key={i}><td>{it.label}</td><td>{fc(it.total)}</td></tr>)}
+                                    <tr className="t-total"><td>Total Module Cost</td><td>{o ? fc(o.modOut.totalModuleCost) : '--'}</td></tr>
+                                </tbody></table>
+                            </>}>
+                            <div className="metric-list">
+                                <MRow label="Module Voltage" value={o ? fmt(o.modOut.moduleVoltage, 1) + ' V' : '--'} />
+                                <MRow label="Module Energy" value={o ? fmt(o.modOut.moduleEnergyKWh, 2) + ' kWh' : '--'} />
+                                <MRow label="Cells / Module" value={String(inputs.cellsPerModule)} />
+                                <MRow label="Cost / kWh" value={o && o.modOut.moduleEnergyKWh > 0 ? fc(o.modOut.totalModuleCost / o.modOut.moduleEnergyKWh) : '--'} cls="dim" />
+                                <MRow label="Total Cost" value={o ? fc(o.modOut.totalModuleCost) : '--'} cls="green" total />
+                            </div>
+                        </SCard>
+
+                        {/* RACK */}
+                        <SCard title="Pack / Rack" onEdit={() => setEditSection('pack')}
+                            detail={<>
+                                <div className="s-expand-title">Component Breakdown</div>
+                                <table className="s-detail-table"><thead><tr><th>Component</th><th>Total</th></tr></thead><tbody>
+                                    {o && o.packOut.items.map((it, i) => <tr key={i}><td>{it.label}</td><td>{fc(it.total)}</td></tr>)}
+                                    <tr className="t-total"><td>Total Rack Cost</td><td>{o ? fc(o.packOut.totalRackCost) : '--'}</td></tr>
+                                </tbody></table>
+                            </>}>
+                            <div className="metric-list">
+                                <MRow label="Rack Voltage" value={o ? fmt(o.packOut.rackVoltage, 1) + ' V' : '--'} />
+                                <MRow label="Rack Energy" value={o ? fmt(o.packOut.rackEnergy, 1) + ' kWh' : '--'} />
+                                <MRow label="Modules / Rack" value={String(inputs.modulesPerRack)} />
+                                <MRow label="BMS + Cables" value={o ? fc(o.packOut.daisyChainCableCost + inputs.bmsControllerQty * inputs.bmsControllerCost) : '--'} cls="dim" />
+                                <MRow label="Total Rack Cost" value={o ? fc(o.packOut.totalRackCost) : '--'} cls="green" total />
+                            </div>
+                        </SCard>
+                    </div>
+
+                    {/* ── Row 2: System (wide) + BOP ── */}
+                    <div className="bess-row bess-row-8-4">
+                        {/* SYSTEM */}
+                        <SCard title="System Overview" onEdit={() => setEditSection('system')}
+                            detail={<>
+                                <div className="s-expand-title">Energy Calculation Logic</div>
+                                <div className="metric-list">
+                                    <MRow label="Required AC Energy" value={o ? fmt(o.sysOut.requiredACEnergy, 1) + ' kWh' : '--'} />
+                                    <MRow label="Gross DC Energy Req." value={o ? fmt(o.sysOut.grossDCEnergy, 1) + ' kWh' : '--'} />
+                                    <MRow label="Total DC (MWh)" value={o ? fmt(o.sysOut.totalDCEnergyMWh, 4) + ' MWh' : '--'} />
+                                </div>
+                                <div className="s-expand-title" style={{ marginTop: 16 }}>PCS Cost Breakdown</div>
+                                <table className="s-detail-table"><thead><tr><th>Item</th><th>Amount</th></tr></thead><tbody>
+                                    <tr><td>Total Racks Cost ({o ? o.sysOut.numberOfRacks : '-'} racks)</td><td>{o ? fc(o.sysOut.totalRacksCost) : '--'}</td></tr>
+                                    <tr><td>Master BMS</td><td>{fc(inputs.masterBMSCost)}</td></tr>
+                                    <tr><td>BMS Housing</td><td>{fc(inputs.bmsHousingCost)}</td></tr>
+                                    <tr><td>Safety Systems</td><td>{fc(inputs.safetySystemsCost)}</td></tr>
+                                    <tr><td>PCS ({inputs.systemMW} MW)</td><td>{o ? fc(o.sysOut.pcsCostTotal) : '--'}</td></tr>
+                                    <tr className="t-total"><td>Total Battery System</td><td>{o ? fc(o.sysOut.totalBatterySystemCost) : '--'}</td></tr>
+                                </tbody></table>
+                            </>}>
+                            <div className="metric-list">
+                                <MRow label="System Power" value={fmt(inputs.systemMW, 1) + ' MW'} />
+                                <MRow label="Duration" value={o ? fmt(o.sysOut.duration, 2) + ' h' : '--'} />
+                                <MRow label="Total DC Energy" value={o ? fmt(o.sysOut.totalDCEnergy, 1) + ' kWh' : '--'} cls="green" />
+                                <MRow label="Delivered AC Energy" value={o ? fmt(o.sysOut.deliveredACEnergy, 1) + ' kWh' : '--'} />
+                                <MRow label="Total Racks" value={o ? fmtInt(o.sysOut.numberOfRacks) + ' racks' : '--'} />
+                                <MRow label="Total Cells" value={o ? fmtInt(o.sysOut.totalCells) : '--'} cls="dim" />
+                                <MRow label="Total Modules" value={o ? fmtInt(o.sysOut.totalModules) : '--'} cls="dim" />
+                                <MRow label="Battery System Cost" value={o ? fc(o.sysOut.totalBatterySystemCost) : '--'} cls="green" total />
+                            </div>
+                        </SCard>
+
+                        {/* BOP */}
+                        <SCard title="Balance of Plant" onEdit={() => setEditSection('bop')}>
+                            <div className="metric-list">
+                                <MRow label="Civil Works" value={fc(inputs.civilWorks)} />
+                                <MRow label="AC Cabling" value={fc(inputs.acCabling)} />
+                                <MRow label="Earthing" value={fc(inputs.earthing)} />
+                                <MRow label="Installation Labour" value={fc(inputs.installationLabour)} />
+                                <MRow label="Communication" value={fc(inputs.communication)} />
+                                <MRow label="Total BOP Cost" value={o ? fc(o.bopOut.totalBOPCost) : '--'} cls="green" total />
+                            </div>
+                        </SCard>
+                    </div>
+
+                    {/* ── Row 3: Cost Summary (full width, premium) ── */}
+                    <div className="bess-row bess-row-1">
+                        <div className="cost-summary-card">
+                            <div className="cost-summary-head">
+                                <h2>Cost Summary</h2>
+                            </div>
+                            <div className="cost-summary-body">
+                                <div className="cost-col">
+                                    <MRow label="Battery System Cost" value={o ? fc(o.sysOut.totalBatterySystemCost) : '--'} />
+                                    <MRow label="BOP Cost" value={o ? fc(o.bopOut.totalBOPCost) : '--'} />
+                                    <div className="cost-grand">
+                                        <MRow label="Grand Total" value={o ? fc(o.summary.totalSystemCost) : '--'} cls="green" />
                                     </div>
                                 </div>
-                                <NumInput id="cell-cap" label="Cell Capacity" value={inputs.cellCapacity} unit="Ah" step={1} min={1} onChange={c('cellCapacity')} />
-                                <NumInput id="cell-volt" label="Nominal Voltage" value={inputs.nominalVoltage} unit="V" step={0.1} min={0.1} onChange={c('nominalVoltage')} />
-                                <NumInput id="cell-cost" label="Cell Cost" value={inputs.cellCost} unit={sym} step={100} min={0} onChange={c('cellCost')} />
-                                <NumInput id="cell-dod" label="Depth of Discharge" value={inputs.dod} unit="(0-1)" step={0.01} min={0.01} max={1} onChange={c('dod')} />
-                                <NumInput id="cell-eff" label="Efficiency" value={inputs.efficiency} unit="(0-1)" step={0.01} min={0.5} max={1} onChange={c('efficiency')} />
-                                <NumInput id="cell-eol" label="End of Life (EOL)" value={inputs.eol} unit="(0-1)" step={0.01} min={0.1} max={1} onChange={c('eol')} />
-                            </div>
-                            <div className="bess-results-card">
-                                <h3>⚡ Calculated</h3>
-                                <table className="bess-result-table">
-                                    <tbody>
-                                        <ResultRow label="Cell Energy" value={o ? fmt(o.cellOut.cellEnergy, 1) + ' Wh' : '--'} />
-                                        <ResultRow label="Cell Energy (kWh)" value={o ? fmt(o.cellOut.cellEnergyKWh, 4) + ' kWh' : '--'} />
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* ═══ MODULE (BOM) ══════════════════════════════ */}
-                {activeTab === 'module' && (
-                    <div className="bess-section-panel" key="module">
-                        <div className="bess-split">
-                            {/* LEFT: Quantity & Rate inputs */}
-                            <div className="bess-inputs-card">
-                                <h3>📋 Module — Quantity & Rate</h3>
-                                <div className="bess-results-inline" style={{ marginBottom: 12 }}>
-                                    <span><strong>Module Voltage:</strong> {o ? fmt(o.modOut.moduleVoltage, 1) + ' V' : '--'}</span>
-                                    <span><strong>Module Energy:</strong> {o ? fmt(o.modOut.moduleEnergy, 1) + ' Wh' : '--'} ({o ? fmt(o.modOut.moduleEnergyKWh, 2) + ' kWh' : '--'})</span>
+                                <div className="cost-summary-divider" />
+                                <div className="cost-col">
+                                    <MRow label="Cost / kWh" value={o ? fc(o.summary.costPerKWh) : '--'} cls="orange" />
+                                    <MRow label="Cost / kW" value={o ? fc(o.summary.costPerKW) : '--'} />
+                                    <MRow label="Total DC Energy" value={o ? fmt(o.sysOut.totalDCEnergy, 1) + ' kWh' : '--'} cls="dim" />
+                                    <MRow label="Total Racks" value={o ? fmtInt(o.sysOut.numberOfRacks) : '--'} cls="dim" />
+                                    <MRow label="Total Modules" value={o ? fmtInt(o.sysOut.totalModules) : '--'} cls="dim" />
+                                    <MRow label="Total Cells" value={o ? fmtInt(o.sysOut.totalCells) : '--'} cls="dim" />
                                 </div>
-                                <table className="bom-table">
-                                    <thead>
-                                        <tr>
-                                            <th className="bom-col-item">Component</th>
-                                            <th className="bom-col-qty">Qty</th>
-                                            <th className="bom-col-price">Rate ({sym})</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td>LFP Cells</td><td className="bom-td-qty"><CellInput value={inputs.cellsPerModule} onChange={c('cellsPerModule')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.cellCost} onChange={c('cellCost')} step={100} min={0} /></td></tr>
-                                        <tr><td>Mechanical Housing</td><td className="bom-td-qty"><CellInput value={inputs.housingQty} onChange={c('housingQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.housingCost} onChange={c('housingCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Busbar</td><td className="bom-td-qty"><CellInput value={inputs.busbarQty} onChange={c('busbarQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.busbarCost} onChange={c('busbarCost')} step={10} min={0} /></td></tr>
-                                        <tr><td>CSC</td><td className="bom-td-qty"><CellInput value={inputs.cscQty} onChange={c('cscQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.cscCost} onChange={c('cscCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Connectors</td><td className="bom-td-qty"><CellInput value={inputs.connectorsQty} onChange={c('connectorsQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.connectorsCost} onChange={c('connectorsCost')} step={10} min={0} /></td></tr>
-                                        <tr><td>Insulation & Spacers</td><td className="bom-td-qty"><CellInput value={inputs.insulationQty} onChange={c('insulationQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.insulationCost} onChange={c('insulationCost')} step={50} min={0} /></td></tr>
-                                        <tr><td>Fasteners & Hardware</td><td className="bom-td-qty"><CellInput value={inputs.fastenersQty} onChange={c('fastenersQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.fastenersCost} onChange={c('fastenersCost')} step={50} min={0} /></td></tr>
-                                        <tr><td>Cell Adaptor</td><td className="bom-td-qty"><CellInput value={inputs.cellAdaptorQty} onChange={c('cellAdaptorQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.cellAdaptorCost} onChange={c('cellAdaptorCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Labour (assembly)</td><td className="bom-td-qty"><CellInput value={inputs.labourQty} onChange={c('labourQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.labourCost} onChange={c('labourCost')} step={50} min={0} /></td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* RIGHT: Cost breakdown */}
-                            <div className="bess-results-card">
-                                <h3>💰 Module — Cost Breakdown</h3>
-                                <table className="bess-result-table">
-                                    <thead><tr><th style={{ textAlign: 'left' }}>Component</th><th>Total ({sym})</th></tr></thead>
-                                    <tbody>
-                                        <ResultRow label="LFP Cells" value={fc(inputs.cellsPerModule * inputs.cellCost)} />
-                                        <ResultRow label="Mechanical Housing" value={fc(inputs.housingQty * inputs.housingCost)} />
-                                        <ResultRow label="Busbar" value={fc(inputs.busbarQty * inputs.busbarCost)} />
-                                        <ResultRow label="CSC" value={fc(inputs.cscQty * inputs.cscCost)} />
-                                        <ResultRow label="Connectors" value={fc(inputs.connectorsQty * inputs.connectorsCost)} />
-                                        <ResultRow label="Insulation & Spacers" value={fc(inputs.insulationQty * inputs.insulationCost)} />
-                                        <ResultRow label="Fasteners & Hardware" value={fc(inputs.fastenersQty * inputs.fastenersCost)} />
-                                        <ResultRow label="Cell Adaptor" value={fc(inputs.cellAdaptorQty * inputs.cellAdaptorCost)} />
-                                        <ResultRow label="Labour (assembly)" value={fc(inputs.labourQty * inputs.labourCost)} />
-                                        <ResultRow label="Total Module Cost" value={o ? fc(o.modOut.totalModuleCost) : '--'} highlight />
-                                    </tbody>
-                                </table>
                             </div>
                         </div>
                     </div>
-                )}
 
-                {/* ═══ PACK / RACK (BOM) ═════════════════════════ */}
-                {activeTab === 'pack' && (
-                    <div className="bess-section-panel" key="pack">
-                        <div className="bess-split">
-                            {/* LEFT: Quantity & Rate inputs */}
-                            <div className="bess-inputs-card">
-                                <h3>📋 Pack / Rack — Quantity & Rate</h3>
-                                <div className="bess-results-inline" style={{ marginBottom: 12 }}>
-                                    <span><strong>Rack Voltage:</strong> {o ? fmt(o.packOut.rackVoltage, 1) + ' V' : '--'}</span>
-                                    <span><strong>Rack Energy:</strong> {o ? fmt(o.packOut.rackEnergy, 1) + ' kWh' : '--'}</span>
-                                </div>
-                                <table className="bom-table">
-                                    <thead>
-                                        <tr>
-                                            <th className="bom-col-item">Component</th>
-                                            <th className="bom-col-qty">Qty</th>
-                                            <th className="bom-col-price">Rate ({sym})</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td>Modules</td><td className="bom-td-qty"><CellInput value={inputs.modulesPerRack} onChange={c('modulesPerRack')} step={1} min={1} /></td><td className="bom-td-price">{o ? fc(o.modOut.totalModuleCost) : '--'}</td></tr>
-                                        <tr><td>Rack Frame</td><td className="bom-td-qty"><CellInput value={inputs.rackFrameQty} onChange={c('rackFrameQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.rackFrameCost} onChange={c('rackFrameCost')} step={5000} min={0} /></td></tr>
-                                        <tr><td>Pack Monitor</td><td className="bom-td-qty"><CellInput value={inputs.packMonitorQty} onChange={c('packMonitorQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.packMonitorCost} onChange={c('packMonitorCost')} step={1000} min={0} /></td></tr>
-                                        <tr><td>Contactors</td><td className="bom-td-qty"><CellInput value={inputs.contactorQty} onChange={c('contactorQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.contactorCost} onChange={c('contactorCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>DC Breaker</td><td className="bom-td-qty"><CellInput value={inputs.dcBreakerQty} onChange={c('dcBreakerQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.dcBreakerCost} onChange={c('dcBreakerCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>DC Fuse</td><td className="bom-td-qty"><CellInput value={inputs.dcFuseQty} onChange={c('dcFuseQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.dcFuseCost} onChange={c('dcFuseCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Mounting Rails</td><td className="bom-td-qty"><CellInput value={inputs.mountingRailsQty} onChange={c('mountingRailsQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.mountingRailsCost} onChange={c('mountingRailsCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Rack Labour</td><td className="bom-td-qty"><CellInput value={inputs.rackLabourQty} onChange={c('rackLabourQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.rackLabourCost} onChange={c('rackLabourCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Cable – Red</td><td className="bom-td-qty"><CellInput value={inputs.cableLengthPerRack} onChange={c('cableLengthPerRack')} step={1} min={0} /><span className="bom-unit-hint">m</span></td><td className="bom-td-price"><CellInput value={inputs.cableRedPricePerM} onChange={c('cableRedPricePerM')} step={10} min={0} /><span className="bom-unit-hint">/m</span></td></tr>
-                                        <tr><td>Cable – Black</td><td className="bom-td-qty"><CellInput value={inputs.cableLengthPerRack} onChange={c('cableLengthPerRack')} step={1} min={0} /><span className="bom-unit-hint">m</span></td><td className="bom-td-price"><CellInput value={inputs.cableBlackPricePerM} onChange={c('cableBlackPricePerM')} step={10} min={0} /><span className="bom-unit-hint">/m</span></td></tr>
-                                        <tr><td>BMS Controller</td><td className="bom-td-qty"><CellInput value={inputs.bmsControllerQty} onChange={c('bmsControllerQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.bmsControllerCost} onChange={c('bmsControllerCost')} step={1000} min={0} /></td></tr>
-                                        <tr><td>Daisy Chain Converter</td><td className="bom-td-qty"><CellInput value={inputs.daisyChainConverterQty} onChange={c('daisyChainConverterQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.daisyChainConverterCost} onChange={c('daisyChainConverterCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Daisy Chain Cable</td><td className="bom-td-qty"><CellInput value={inputs.daisyChainCableLengthPerRack} onChange={c('daisyChainCableLengthPerRack')} step={1} min={0} /><span className="bom-unit-hint">m</span></td><td className="bom-td-price"><CellInput value={inputs.daisyChainCableCostPerM} onChange={c('daisyChainCableCostPerM')} step={10} min={0} /><span className="bom-unit-hint">/m</span></td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* RIGHT: Cost breakdown */}
-                            <div className="bess-results-card">
-                                <h3>💰 Pack / Rack — Cost Breakdown</h3>
-                                <table className="bess-result-table">
-                                    <thead><tr><th style={{ textAlign: 'left' }}>Component</th><th>Total ({sym})</th></tr></thead>
-                                    <tbody>
-                                        <ResultRow label="Modules" value={o ? fc(o.packOut.modulesCostPerRack) : '--'} />
-                                        <ResultRow label="Rack Frame" value={fc(inputs.rackFrameQty * inputs.rackFrameCost)} />
-                                        <ResultRow label="Pack Monitor" value={fc(inputs.packMonitorQty * inputs.packMonitorCost)} />
-                                        <ResultRow label="Contactors" value={fc(inputs.contactorQty * inputs.contactorCost)} />
-                                        <ResultRow label="DC Breaker" value={fc(inputs.dcBreakerQty * inputs.dcBreakerCost)} />
-                                        <ResultRow label="DC Fuse" value={fc(inputs.dcFuseQty * inputs.dcFuseCost)} />
-                                        <ResultRow label="Mounting Rails" value={fc(inputs.mountingRailsQty * inputs.mountingRailsCost)} />
-                                        <ResultRow label="Rack Labour" value={fc(inputs.rackLabourQty * inputs.rackLabourCost)} />
-                                        <ResultRow label="Cable – Red" value={fc(inputs.cableLengthPerRack * inputs.cableRedPricePerM)} />
-                                        <ResultRow label="Cable – Black" value={fc(inputs.cableLengthPerRack * inputs.cableBlackPricePerM)} />
-                                        <ResultRow label="BMS Controller" value={fc(inputs.bmsControllerQty * inputs.bmsControllerCost)} />
-                                        <ResultRow label="Daisy Chain Converter" value={fc(inputs.daisyChainConverterQty * inputs.daisyChainConverterCost)} />
-                                        <ResultRow label="Daisy Chain Cable" value={fc(inputs.daisyChainCableLengthPerRack * inputs.daisyChainCableCostPerM)} />
-                                        <ResultRow label="Total Rack Cost" value={o ? fc(o.packOut.totalRackCost) : '--'} highlight />
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* ═══ SYSTEM ════════════════════════════════════ */}
-                {activeTab === 'system' && (
-                    <div className="bess-section-panel" key="system">
-                        <div className="bess-split">
-                            <div className="bess-inputs-card">
-                                <h3>🏗️ System Inputs</h3>
-                                <NumInput id="sys-mw" label="System Power (AC)" value={inputs.systemMW} unit="MW" step={0.1} min={0.1} onChange={c('systemMW')} />
-                                <NumInput id="sys-crate" label="C-Rate" value={inputs.cRate} unit="C" step={0.1} min={0.1} onChange={c('cRate')} />
-                                <NumInput id="sys-bms" label="Master BMS Cost" value={inputs.masterBMSCost} unit={sym} step={10000} min={0} onChange={c('masterBMSCost')} />
-                                <NumInput id="sys-bms-h" label="BMS Housing Cost" value={inputs.bmsHousingCost} unit={sym} step={1000} min={0} onChange={c('bmsHousingCost')} />
-                                <NumInput id="sys-safety" label="Safety Systems Cost" value={inputs.safetySystemsCost} unit={sym} step={10000} min={0} onChange={c('safetySystemsCost')} />
-                                <NumInput id="sys-pcs" label="PCS Cost (per MW)" value={inputs.pcsCost} unit={`${sym}/MW`} step={10000} min={0} onChange={c('pcsCost')} />
-                            </div>
-                            <div className="bess-results-card">
-                                <h3>⚡ Calculated</h3>
-                                <table className="bess-result-table">
-                                    <tbody>
-                                        <ResultRow label="Duration" value={o ? fmt(o.sysOut.duration, 2) + ' h' : '--'} />
-                                        <ResultRow label="Required AC Energy" value={o ? fmt(o.sysOut.requiredACEnergy, 1) + ' kWh' : '--'} />
-                                        <ResultRow label="Gross DC Energy Required" value={o ? fmt(o.sysOut.grossDCEnergy, 1) + ' kWh' : '--'} />
-                                        <ResultRow label="Number of Racks" value={o ? fmtInt(o.sysOut.numberOfRacks) + ' racks' : '--'} />
-                                        <ResultRow label="Total DC Energy Installed" value={o ? fmt(o.sysOut.totalDCEnergy, 1) + ' kWh' : '--'} />
-                                        <ResultRow label="Total DC Energy (MWh)" value={o ? fmt(o.sysOut.totalDCEnergyMWh, 4) + ' MWh' : '--'} />
-                                        <ResultRow label="Total Cells" value={o ? fmtInt(o.sysOut.totalCells) + ' cells' : '--'} />
-                                        <ResultRow label="Total Modules" value={o ? fmtInt(o.sysOut.totalModules) + ' modules' : '--'} />
-                                        <ResultRow label="Delivered AC Energy" value={o ? fmt(o.sysOut.deliveredACEnergy, 1) + ' kWh' : '--'} />
-                                    </tbody>
-                                </table>
-                                <h3 style={{ marginTop: 18 }}>💰 System Cost Breakdown</h3>
-                                <table className="bess-result-table">
-                                    <thead><tr><th style={{ textAlign: 'left' }}>Item</th><th>Amount</th></tr></thead>
-                                    <tbody>
-                                        <ResultRow label={`Total Racks Cost (${o ? o.sysOut.numberOfRacks : '-'} racks)`} value={o ? fc(o.sysOut.totalRacksCost) : '--'} />
-                                        <ResultRow label="Master BMS" value={o ? fc(inputs.masterBMSCost) : '--'} />
-                                        <ResultRow label="BMS Housing" value={o ? fc(inputs.bmsHousingCost) : '--'} />
-                                        <ResultRow label="Safety Systems" value={o ? fc(inputs.safetySystemsCost) : '--'} />
-                                        <ResultRow label={`PCS (${inputs.systemMW} MW)`} value={o ? fc(o.sysOut.pcsCostTotal) : '--'} />
-                                        <ResultRow label="Total Battery System Cost" value={o ? fc(o.sysOut.totalBatterySystemCost) : '--'} highlight />
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* ═══ BOP ═══════════════════════════════════════ */}
-                {activeTab === 'bop' && (
-                    <div className="bess-section-panel" key="bop">
-                        <div className="bess-split">
-                            <div className="bess-inputs-card">
-                                <h3>⚡ Balance of Plant Inputs</h3>
-                                <NumInput id="bop-civil" label="Civil Works" value={inputs.civilWorks} unit={sym} step={50000} min={0} onChange={c('civilWorks')} />
-                                <NumInput id="bop-cable" label="AC Cabling" value={inputs.acCabling} unit={sym} step={10000} min={0} onChange={c('acCabling')} />
-                                <NumInput id="bop-earth" label="Earthing" value={inputs.earthing} unit={sym} step={10000} min={0} onChange={c('earthing')} />
-                                <NumInput id="bop-labour" label="Installation Labour" value={inputs.installationLabour} unit={sym} step={10000} min={0} onChange={c('installationLabour')} />
-                                <NumInput id="bop-comm" label="Communication" value={inputs.communication} unit={sym} step={10000} min={0} onChange={c('communication')} />
-                            </div>
-                            <div className="bess-results-card">
-                                <h3>💰 BOP Cost</h3>
-                                <table className="bess-result-table">
-                                    <thead><tr><th style={{ textAlign: 'left' }}>Item</th><th>Amount</th></tr></thead>
-                                    <tbody>
-                                        <ResultRow label="Civil Works" value={o ? fc(inputs.civilWorks) : '--'} />
-                                        <ResultRow label="AC Cabling" value={o ? fc(inputs.acCabling) : '--'} />
-                                        <ResultRow label="Earthing" value={o ? fc(inputs.earthing) : '--'} />
-                                        <ResultRow label="Installation Labour" value={o ? fc(inputs.installationLabour) : '--'} />
-                                        <ResultRow label="Communication" value={o ? fc(inputs.communication) : '--'} />
-                                        <ResultRow label="Total BOP Cost" value={o ? fc(o.bopOut.totalBOPCost) : '--'} highlight />
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* ═══ SUMMARY ═══════════════════════════════════ */}
-                {activeTab === 'summary' && (
-                    <div className="bess-section-panel" key="summary">
-                        <div className="bess-summary-grid">
-                            {/* Grand Cost Summary */}
-                            <div className="bess-results-card bess-summary-wide">
-                                <h3>📊 Total System Cost Summary</h3>
-                                <table className="bess-result-table">
-                                    <thead><tr><th style={{ textAlign: 'left' }}>Item</th><th>Amount</th></tr></thead>
-                                    <tbody>
-                                        <ResultRow label="Battery System Cost" value={o ? fc(o.sysOut.totalBatterySystemCost) : '--'} />
-                                        <ResultRow label="BOP Cost" value={o ? fc(o.bopOut.totalBOPCost) : '--'} />
-                                        <ResultRow label="Total System Cost" value={o ? fc(o.summary.totalSystemCost) : '--'} highlight />
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Key Metrics */}
-                            <div className="bess-results-card">
-                                <h3>🔑 Key Metrics</h3>
-                                <table className="bess-result-table">
-                                    <tbody>
-                                        <ResultRow label="Total DC Energy" value={o ? fmt(o.sysOut.totalDCEnergy, 1) + ' kWh' : '--'} />
-                                        <ResultRow label="Total DC Energy (MWh)" value={o ? fmt(o.sysOut.totalDCEnergyMWh, 4) + ' MWh' : '--'} />
-                                        <ResultRow label="Delivered AC Energy" value={o ? fmt(o.sysOut.deliveredACEnergy, 1) + ' kWh' : '--'} />
-                                        <ResultRow label="Total Racks" value={o ? fmtInt(o.sysOut.numberOfRacks) : '--'} />
-                                        <ResultRow label="Total Modules" value={o ? fmtInt(o.sysOut.totalModules) : '--'} />
-                                        <ResultRow label="Total Cells" value={o ? fmtInt(o.sysOut.totalCells) : '--'} />
-                                        <ResultRow label="Cost per kWh" value={o ? fc(o.summary.costPerKWh) : '--'} highlight />
-                                        <ResultRow label="Cost per kW" value={o ? fc(o.summary.costPerKW) : '--'} highlight />
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Cost Roll-Up */}
-                            <div className="bess-results-card">
-                                <h3>🏭 Cost Roll-Up</h3>
-                                <table className="bess-result-table">
-                                    <thead><tr><th style={{ textAlign: 'left' }}>Level</th><th>Cost</th></tr></thead>
-                                    <tbody>
-                                        <ResultRow label="Per Module" value={o ? fc(o.modOut.totalModuleCost) : '--'} />
-                                        <ResultRow label="Per Rack" value={o ? fc(o.packOut.totalRackCost) : '--'} />
-                                        <ResultRow label={`All Racks (${o ? o.sysOut.numberOfRacks : '-'})`} value={o ? fc(o.sysOut.totalRacksCost) : '--'} />
-                                        <ResultRow label="System (Battery)" value={o ? fc(o.sysOut.totalBatterySystemCost) : '--'} />
-                                        <ResultRow label="BOP" value={o ? fc(o.bopOut.totalBOPCost) : '--'} />
-                                        <ResultRow label="Grand Total" value={o ? fc(o.summary.totalSystemCost) : '--'} highlight />
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* System-level BOM Totals */}
-                            <div className="bess-results-card bess-summary-wide">
-                                <h3>📦 Bill of Quantities — Entire System</h3>
-                                <table className="bess-result-table">
-                                    <thead>
-                                        <tr>
-                                            <th style={{ textAlign: 'left' }}>Item</th>
-                                            <th style={{ textAlign: 'right' }}>Qty / Unit</th>
-                                            <th style={{ textAlign: 'right' }}>Units</th>
-                                            <th style={{ textAlign: 'right' }}>Total Qty</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {o && <>
-                                            <tr><td>LFP Cells</td><td style={{ textAlign: 'right' }}>{inputs.cellsPerModule}</td><td style={{ textAlign: 'right' }}>{fmtInt(o.sysOut.totalModules)} modules</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.cells)}</strong></td></tr>
-                                            <tr><td>Modules</td><td style={{ textAlign: 'right' }}>{inputs.modulesPerRack}</td><td style={{ textAlign: 'right' }}>{fmtInt(o.sysOut.numberOfRacks)} racks</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.modules)}</strong></td></tr>
-                                            <tr><td>Racks</td><td style={{ textAlign: 'right' }}>—</td><td style={{ textAlign: 'right' }}>—</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.racks)}</strong></td></tr>
-                                            <tr><td>Busbars</td><td style={{ textAlign: 'right' }}>{inputs.busbarQty}</td><td style={{ textAlign: 'right' }}>{fmtInt(o.sysOut.totalModules)} modules</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.busbars)}</strong></td></tr>
-                                            <tr><td>Housings</td><td style={{ textAlign: 'right' }}>{inputs.housingQty}</td><td style={{ textAlign: 'right' }}>{fmtInt(o.sysOut.totalModules)} modules</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.housings)}</strong></td></tr>
-                                            <tr><td>CSC</td><td style={{ textAlign: 'right' }}>{inputs.cscQty}</td><td style={{ textAlign: 'right' }}>{fmtInt(o.sysOut.totalModules)} modules</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.cscs)}</strong></td></tr>
-                                            <tr><td>Connectors</td><td style={{ textAlign: 'right' }}>{inputs.connectorsQty}</td><td style={{ textAlign: 'right' }}>{fmtInt(o.sysOut.totalModules)} modules</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.connectors)}</strong></td></tr>
-                                            <tr><td>Cell Adaptors</td><td style={{ textAlign: 'right' }}>{inputs.cellAdaptorQty}</td><td style={{ textAlign: 'right' }}>{fmtInt(o.sysOut.totalModules)} modules</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.cellAdaptors)}</strong></td></tr>
-                                            <tr><td>Contactors</td><td style={{ textAlign: 'right' }}>{inputs.contactorQty}</td><td style={{ textAlign: 'right' }}>{fmtInt(o.sysOut.numberOfRacks)} racks</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.contactors)}</strong></td></tr>
-                                            <tr><td>Pack Monitors</td><td style={{ textAlign: 'right' }}>{inputs.packMonitorQty}</td><td style={{ textAlign: 'right' }}>{fmtInt(o.sysOut.numberOfRacks)} racks</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.packMonitors)}</strong></td></tr>
-                                            <tr><td>BMS Controllers</td><td style={{ textAlign: 'right' }}>{inputs.bmsControllerQty}</td><td style={{ textAlign: 'right' }}>{fmtInt(o.sysOut.numberOfRacks)} racks</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.bmsControllers)}</strong></td></tr>
-                                            <tr><td>Cable – Red</td><td style={{ textAlign: 'right' }}>{inputs.cableLengthPerRack} m</td><td style={{ textAlign: 'right' }}>{fmtInt(o.sysOut.numberOfRacks)} racks</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.cableRedMetres)} m</strong></td></tr>
-                                            <tr><td>Cable – Black</td><td style={{ textAlign: 'right' }}>{inputs.cableLengthPerRack} m</td><td style={{ textAlign: 'right' }}>{fmtInt(o.sysOut.numberOfRacks)} racks</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.cableBlackMetres)} m</strong></td></tr>
-                                            <tr><td>Daisy Chain Cable</td><td style={{ textAlign: 'right' }}>{inputs.daisyChainCableLengthPerRack} m</td><td style={{ textAlign: 'right' }}>{fmtInt(o.sysOut.numberOfRacks)} racks</td><td style={{ textAlign: 'right' }}><strong>{fmtInt(o.sysOut.bomTotals.daisyChainCableMetres)} m</strong></td></tr>
-                                        </>}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                </div>
             </div>
+
+            {/* ═══ EDIT MODALS ═══ */}
+            {editSection === 'cell' && (
+                <EditModal title="Cell" onClose={() => setEditSection(null)}
+                    left={<>
+                        <div className="bess-field"><label htmlFor="hb-chem">Cell Chemistry</label>
+                            <div className="bess-field-row"><select id="hb-chem" value={inputs.cellChemistry} onChange={e => set('cellChemistry', e.target.value)}>
+                                <option value="LFP">LFP</option><option value="NMC">NMC</option><option value="NCA">NCA</option><option value="LTO">LTO</option>
+                            </select></div>
+                        </div>
+                        <NumInput id="e-cap" label="Cell Capacity" value={inputs.cellCapacity} unit="Ah" step={1} min={1} onChange={c('cellCapacity')} />
+                        <NumInput id="e-volt" label="Nominal Voltage" value={inputs.nominalVoltage} unit="V" step={0.1} min={0.1} onChange={c('nominalVoltage')} />
+                        <NumInput id="e-cost" label="Cell Cost" value={inputs.cellCost} unit={sym} step={100} min={0} onChange={c('cellCost')} displayRate={bessRate} />
+                        <NumInput id="e-dod" label="Depth of Discharge" value={inputs.dod} unit="(0-1)" step={0.01} min={0.01} max={1} onChange={c('dod')} />
+                        <NumInput id="e-eff" label="Efficiency" value={inputs.efficiency} unit="(0-1)" step={0.01} min={0.5} max={1} onChange={c('efficiency')} />
+                        <NumInput id="e-eol" label="End of Life (EOL)" value={inputs.eol} unit="(0-1)" step={0.01} min={0.1} max={1} onChange={c('eol')} />
+                    </>}
+                    right={<>
+                        <div className="live-section"><h4>Calculated Results</h4>
+                            <div className="metric-list">
+                                <MRow label="Chemistry" value={inputs.cellChemistry} />
+                                <MRow label="Cell Energy" value={o ? fmt(o.cellOut.cellEnergy, 1) + ' Wh' : '--'} cls="green" />
+                                <MRow label="Cell Energy (kWh)" value={o ? fmt(o.cellOut.cellEnergyKWh, 4) + ' kWh' : '--'} />
+                                <MRow label="Cell Cost" value={fc(inputs.cellCost)} cls="orange" />
+                                <MRow label="DOD" value={fmt(inputs.dod, 2)} />
+                                <MRow label="Efficiency" value={fmt(inputs.efficiency, 2)} />
+                                <MRow label="EOL" value={fmt(inputs.eol, 2)} />
+                                <MRow label="Degradation Factor" value={fmt(inputs.dod * inputs.efficiency * inputs.eol, 4)} cls="dim" />
+                            </div>
+                        </div>
+                    </>}
+                />
+            )}
+
+            {editSection === 'module' && (
+                <EditModal title="Module" onClose={() => setEditSection(null)}
+                    left={
+                        <table className="bom-table"><thead><tr><th className="bom-col-item">Component</th><th className="bom-col-qty">Qty</th><th className="bom-col-price">Rate ({sym})</th></tr></thead><tbody>
+                            <tr><td>LFP Cells</td><td className="bom-td-qty"><CellInput value={inputs.cellsPerModule} onChange={c('cellsPerModule')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.cellCost} onChange={c('cellCost')} step={100} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Housing</td><td className="bom-td-qty"><CellInput value={inputs.housingQty} onChange={c('housingQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.housingCost} onChange={c('housingCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Busbar</td><td className="bom-td-qty"><CellInput value={inputs.busbarQty} onChange={c('busbarQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.busbarCost} onChange={c('busbarCost')} step={10} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>CSC</td><td className="bom-td-qty"><CellInput value={inputs.cscQty} onChange={c('cscQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.cscCost} onChange={c('cscCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Connectors</td><td className="bom-td-qty"><CellInput value={inputs.connectorsQty} onChange={c('connectorsQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.connectorsCost} onChange={c('connectorsCost')} step={10} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Insulation</td><td className="bom-td-qty"><CellInput value={inputs.insulationQty} onChange={c('insulationQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.insulationCost} onChange={c('insulationCost')} step={50} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Fasteners</td><td className="bom-td-qty"><CellInput value={inputs.fastenersQty} onChange={c('fastenersQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.fastenersCost} onChange={c('fastenersCost')} step={50} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Cell Adaptor</td><td className="bom-td-qty"><CellInput value={inputs.cellAdaptorQty} onChange={c('cellAdaptorQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.cellAdaptorCost} onChange={c('cellAdaptorCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Labour</td><td className="bom-td-qty"><CellInput value={inputs.labourQty} onChange={c('labourQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.labourCost} onChange={c('labourCost')} step={50} min={0} displayRate={bessRate} /></td></tr>
+                        </tbody></table>
+                    }
+                    right={<>
+                        <div className="live-section"><h4>Module Specs</h4>
+                            <div className="metric-list">
+                                <MRow label="Module Voltage" value={o ? fmt(o.modOut.moduleVoltage, 1) + ' V' : '--'} />
+                                <MRow label="Module Energy" value={o ? fmt(o.modOut.moduleEnergyKWh, 2) + ' kWh' : '--'} />
+                                <MRow label="Total Module Cost" value={o ? fc(o.modOut.totalModuleCost) : '--'} cls="green" total />
+                            </div>
+                        </div>
+                        <div className="live-section"><h4>Cost Breakdown</h4>
+                            <table className="s-detail-table"><thead><tr><th>Component</th><th>Total</th></tr></thead><tbody>
+                                {o && o.modOut.items.map((it, i) => <tr key={i}><td>{it.label}</td><td>{fc(it.total)}</td></tr>)}
+                                <tr className="t-total"><td>Total</td><td>{o ? fc(o.modOut.totalModuleCost) : '--'}</td></tr>
+                            </tbody></table>
+                        </div>
+                    </>}
+                />
+            )}
+
+            {editSection === 'pack' && (
+                <EditModal title="Pack / Rack" onClose={() => setEditSection(null)}
+                    left={<>
+                        <NumInput id="ep-mod" label="Modules per Rack" value={inputs.modulesPerRack} unit="modules" step={1} min={1} onChange={c('modulesPerRack')} />
+                        <table className="bom-table"><thead><tr><th className="bom-col-item">Component</th><th className="bom-col-qty">Qty</th><th className="bom-col-price">Rate ({sym})</th></tr></thead><tbody>
+                            <tr><td>Rack Frame</td><td className="bom-td-qty"><CellInput value={inputs.rackFrameQty} onChange={c('rackFrameQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.rackFrameCost} onChange={c('rackFrameCost')} step={5000} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Pack Monitor</td><td className="bom-td-qty"><CellInput value={inputs.packMonitorQty} onChange={c('packMonitorQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.packMonitorCost} onChange={c('packMonitorCost')} step={1000} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Contactors</td><td className="bom-td-qty"><CellInput value={inputs.contactorQty} onChange={c('contactorQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.contactorCost} onChange={c('contactorCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>DC Breaker</td><td className="bom-td-qty"><CellInput value={inputs.dcBreakerQty} onChange={c('dcBreakerQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.dcBreakerCost} onChange={c('dcBreakerCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>DC Fuse</td><td className="bom-td-qty"><CellInput value={inputs.dcFuseQty} onChange={c('dcFuseQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.dcFuseCost} onChange={c('dcFuseCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Mounting Rails</td><td className="bom-td-qty"><CellInput value={inputs.mountingRailsQty} onChange={c('mountingRailsQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.mountingRailsCost} onChange={c('mountingRailsCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Rack Labour</td><td className="bom-td-qty"><CellInput value={inputs.rackLabourQty} onChange={c('rackLabourQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.rackLabourCost} onChange={c('rackLabourCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Cable – Red</td><td className="bom-td-qty"><CellInput value={inputs.cableLengthPerRack} onChange={c('cableLengthPerRack')} step={1} min={0} /><span className="bom-unit-hint">m</span></td><td className="bom-td-price"><CellInput value={inputs.cableRedPricePerM} onChange={c('cableRedPricePerM')} step={10} min={0} displayRate={bessRate} /><span className="bom-unit-hint">/m</span></td></tr>
+                            <tr><td>Cable – Black</td><td className="bom-td-qty"><CellInput value={inputs.cableLengthPerRack} onChange={c('cableLengthPerRack')} step={1} min={0} /><span className="bom-unit-hint">m</span></td><td className="bom-td-price"><CellInput value={inputs.cableBlackPricePerM} onChange={c('cableBlackPricePerM')} step={10} min={0} displayRate={bessRate} /><span className="bom-unit-hint">/m</span></td></tr>
+                            <tr><td>BMS Controller</td><td className="bom-td-qty"><CellInput value={inputs.bmsControllerQty} onChange={c('bmsControllerQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.bmsControllerCost} onChange={c('bmsControllerCost')} step={1000} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Daisy Chain Conv.</td><td className="bom-td-qty"><CellInput value={inputs.daisyChainConverterQty} onChange={c('daisyChainConverterQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.daisyChainConverterCost} onChange={c('daisyChainConverterCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                            <tr><td>Daisy Chain Cable</td><td className="bom-td-qty"><CellInput value={inputs.daisyChainCableLengthPerRack} onChange={c('daisyChainCableLengthPerRack')} step={1} min={0} /><span className="bom-unit-hint">m</span></td><td className="bom-td-price"><CellInput value={inputs.daisyChainCableCostPerM} onChange={c('daisyChainCableCostPerM')} step={10} min={0} displayRate={bessRate} /><span className="bom-unit-hint">/m</span></td></tr>
+                        </tbody></table>
+                    </>}
+                    right={<>
+                        <div className="live-section"><h4>Rack Specs</h4>
+                            <div className="metric-list">
+                                <MRow label="Rack Voltage" value={o ? fmt(o.packOut.rackVoltage, 1) + ' V' : '--'} />
+                                <MRow label="Rack Energy" value={o ? fmt(o.packOut.rackEnergy, 1) + ' kWh' : '--'} />
+                                <MRow label="Total Rack Cost" value={o ? fc(o.packOut.totalRackCost) : '--'} cls="green" total />
+                            </div>
+                        </div>
+                        <div className="live-section"><h4>Cost Breakdown</h4>
+                            <table className="s-detail-table"><thead><tr><th>Component</th><th>Total</th></tr></thead><tbody>
+                                {o && o.packOut.items.map((it, i) => <tr key={i}><td>{it.label}</td><td>{fc(it.total)}</td></tr>)}
+                                <tr className="t-total"><td>Total Rack Cost</td><td>{o ? fc(o.packOut.totalRackCost) : '--'}</td></tr>
+                            </tbody></table>
+                        </div>
+                    </>}
+                />
+            )}
+
+            {editSection === 'system' && (
+                <EditModal title="System" onClose={() => setEditSection(null)}
+                    left={<>
+                        <NumInput id="es-mw" label="System Power (AC)" value={inputs.systemMW} unit="MW" step={0.1} min={0.1} onChange={c('systemMW')} />
+                        <NumInput id="es-cr" label="C-Rate" value={inputs.cRate} unit="C" step={0.1} min={0.1} onChange={c('cRate')} />
+                        <NumInput id="es-bms" label="Master BMS Cost" value={inputs.masterBMSCost} unit={sym} step={10000} min={0} onChange={c('masterBMSCost')} displayRate={bessRate} />
+                        <NumInput id="es-bmsh" label="BMS Housing Cost" value={inputs.bmsHousingCost} unit={sym} step={1000} min={0} onChange={c('bmsHousingCost')} displayRate={bessRate} />
+                        <NumInput id="es-safe" label="Safety Systems" value={inputs.safetySystemsCost} unit={sym} step={10000} min={0} onChange={c('safetySystemsCost')} displayRate={bessRate} />
+                        <NumInput id="es-pcs" label="PCS Cost (per MW)" value={inputs.pcsCost} unit={`${sym}/MW`} step={10000} min={0} onChange={c('pcsCost')} displayRate={bessRate} />
+                    </>}
+                    right={<>
+                        <div className="live-section"><h4>System Overview</h4>
+                            <div className="metric-list">
+                                <MRow label="Duration" value={o ? fmt(o.sysOut.duration, 2) + ' h' : '--'} />
+                                <MRow label="Total DC Energy" value={o ? fmt(o.sysOut.totalDCEnergy, 1) + ' kWh' : '--'} cls="green" />
+                                <MRow label="Delivered AC" value={o ? fmt(o.sysOut.deliveredACEnergy, 1) + ' kWh' : '--'} />
+                                <MRow label="Total Racks" value={o ? fmtInt(o.sysOut.numberOfRacks) : '--'} />
+                                <MRow label="Total Cells" value={o ? fmtInt(o.sysOut.totalCells) : '--'} cls="dim" />
+                            </div>
+                        </div>
+                        <div className="live-section"><h4>Cost Breakdown</h4>
+                            <table className="s-detail-table"><thead><tr><th>Item</th><th>Amount</th></tr></thead><tbody>
+                                <tr><td>Racks ({o ? o.sysOut.numberOfRacks : '-'})</td><td>{o ? fc(o.sysOut.totalRacksCost) : '--'}</td></tr>
+                                <tr><td>Master BMS</td><td>{fc(inputs.masterBMSCost)}</td></tr>
+                                <tr><td>BMS Housing</td><td>{fc(inputs.bmsHousingCost)}</td></tr>
+                                <tr><td>Safety Systems</td><td>{fc(inputs.safetySystemsCost)}</td></tr>
+                                <tr><td>PCS ({inputs.systemMW} MW)</td><td>{o ? fc(o.sysOut.pcsCostTotal) : '--'}</td></tr>
+                                <tr className="t-total"><td>Total Battery System</td><td>{o ? fc(o.sysOut.totalBatterySystemCost) : '--'}</td></tr>
+                            </tbody></table>
+                        </div>
+                    </>}
+                />
+            )}
+
+            {editSection === 'bop' && (
+                <EditModal title="Balance of Plant" onClose={() => setEditSection(null)}
+                    left={<>
+                        <NumInput id="eb-civ" label="Civil Works" value={inputs.civilWorks} unit={sym} step={50000} min={0} onChange={c('civilWorks')} displayRate={bessRate} />
+                        <NumInput id="eb-cab" label="AC Cabling" value={inputs.acCabling} unit={sym} step={10000} min={0} onChange={c('acCabling')} displayRate={bessRate} />
+                        <NumInput id="eb-ear" label="Earthing" value={inputs.earthing} unit={sym} step={10000} min={0} onChange={c('earthing')} displayRate={bessRate} />
+                        <NumInput id="eb-lab" label="Installation Labour" value={inputs.installationLabour} unit={sym} step={10000} min={0} onChange={c('installationLabour')} displayRate={bessRate} />
+                        <NumInput id="eb-com" label="Communication" value={inputs.communication} unit={sym} step={10000} min={0} onChange={c('communication')} displayRate={bessRate} />
+                    </>}
+                    right={
+                        <div className="live-section"><h4>BOP Cost Breakdown</h4>
+                            <div className="metric-list">
+                                <MRow label="Civil Works" value={fc(inputs.civilWorks)} />
+                                <MRow label="AC Cabling" value={fc(inputs.acCabling)} />
+                                <MRow label="Earthing" value={fc(inputs.earthing)} />
+                                <MRow label="Installation Labour" value={fc(inputs.installationLabour)} />
+                                <MRow label="Communication" value={fc(inputs.communication)} />
+                                <MRow label="Total BOP" value={o ? fc(o.bopOut.totalBOPCost) : '--'} cls="green" total />
+                            </div>
+                        </div>
+                    }
+                />
+            )}
         </main>
     );
 }
