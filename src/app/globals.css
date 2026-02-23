@@ -1,5 +1,6 @@
 /* ============================================================
-   BESS Financial Model — Design System
+   BESS Financial Model & Handbook — Design System
+   Migrated to Next.js — pixel-perfect reproduction
    ============================================================ */
 
 /* ── Tokens ─────────────────────────────────────────────────── */
@@ -36,6 +37,7 @@
 
   /* Sizing */
   --sidebar-w: 340px;
+  --section-nav-h: 56px;
   --header-h: 72px;
   --radius: 12px;
   --radius-sm: 8px;
@@ -63,6 +65,7 @@ body {
   background: var(--bg-base);
   color: var(--text-primary);
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
   overflow-x: hidden;
 }
@@ -87,14 +90,110 @@ body {
 }
 
 /* ============================================================
+   SECTION NAVIGATION (Top-Level Tabs)
+   ============================================================ */
+.section-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--section-nav-h);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98) 0%, rgba(17, 24, 39, 0.95) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+}
+
+.section-nav-inner {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0 24px;
+  gap: 32px;
+}
+
+.section-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.section-nav-title {
+  font-size: 1rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--emerald-400), var(--cyan-400));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.section-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s var(--ease);
+  white-space: nowrap;
+}
+
+.section-tab:hover {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.section-tab.active {
+  color: var(--emerald-400);
+  background: rgba(52, 211, 153, 0.08);
+  border-color: rgba(52, 211, 153, 0.2);
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.06);
+}
+
+.section-tab svg {
+  opacity: 0.7;
+  transition: opacity 0.2s var(--ease);
+}
+
+.section-tab.active svg {
+  opacity: 1;
+}
+
+/* ── Section Panels ─────────────────────────────────────────── */
+.section-panel {
+  display: none;
+  margin-top: var(--section-nav-h);
+}
+
+.section-panel.active {
+  display: flex;
+  min-height: calc(100vh - var(--section-nav-h));
+}
+
+/* ============================================================
    SIDEBAR
    ============================================================ */
 .sidebar {
   position: fixed;
-  top: 0;
+  top: var(--section-nav-h);
   left: 0;
   width: var(--sidebar-w);
-  height: 100vh;
+  height: calc(100vh - var(--section-nav-h));
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
   display: flex;
@@ -238,7 +337,8 @@ body {
   gap: 6px;
 }
 
-.input-row input {
+.input-row input,
+.input-row select {
   flex: 1;
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -258,7 +358,8 @@ body {
   -webkit-appearance: none;
 }
 
-.input-row input:focus {
+.input-row input:focus,
+.input-row select:focus {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px var(--emerald-glow);
 }
@@ -321,7 +422,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: calc(100vh - var(--section-nav-h));
   transition: margin-left 0.35s var(--ease);
 }
 
@@ -739,6 +840,53 @@ body {
   height: 280px;
 }
 
+/* ============================================================
+   HANDBOOK LIVE STATUS BADGES
+   ============================================================ */
+.hb-status-badge-live {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all 0.25s var(--ease);
+}
+
+.hb-status-badge-live.status-ok {
+  background: rgba(52, 211, 153, 0.12);
+  color: var(--emerald-400);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+}
+
+.hb-status-badge-live.status-warn {
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--amber-400);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+.hb-status-badge-live.status-over {
+  background: rgba(96, 165, 250, 0.12);
+  color: var(--blue-400);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+}
+
+/* Handbook section sidebar & main positioning */
+#section-handbook .sidebar {
+  position: fixed;
+  top: var(--section-nav-h);
+  left: 0;
+  width: var(--sidebar-w);
+  height: calc(100vh - var(--section-nav-h));
+}
+
+#section-handbook .main-content {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--section-nav-h));
+}
+
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .sidebar {
@@ -751,6 +899,24 @@ body {
 
   .main-content {
     margin-left: 0;
+  }
+
+  #section-handbook .sidebar {
+    transform: translateX(calc(-1 * var(--sidebar-w)));
+  }
+
+  #section-handbook .main-content {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-nav-brand {
+    display: none;
+  }
+
+  .section-nav-inner {
+    justify-content: center;
   }
 }
 
@@ -766,5 +932,14 @@ body {
   .charts-grid,
   .sensitivity-grid {
     grid-template-columns: 1fr;
+  }
+
+  .section-tab {
+    padding: 8px 14px;
+    font-size: 0.78rem;
+  }
+
+  .section-tab svg {
+    display: none;
   }
 }
