@@ -134,6 +134,7 @@ body {
 .section-tabs {
   display: flex;
   gap: 4px;
+  flex: 1;
 }
 
 .section-tab {
@@ -558,6 +559,99 @@ body {
   background: var(--bg-hover);
   color: var(--emerald-400);
   border-color: var(--emerald-400);
+}
+
+/* ── Currency Converter ─────────────────────────────────────── */
+.currency-converter {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.currency-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s var(--ease);
+}
+
+.currency-select-wrapper:hover {
+  border-color: var(--emerald-400);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.currency-select-wrapper:focus-within {
+  border-color: var(--emerald-400);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.currency-label {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.currency-select {
+  background: transparent;
+  color: var(--text-primary);
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  min-width: 110px;
+  padding: 2px 4px;
+}
+
+.currency-select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 8px;
+}
+
+.currency-select:hover,
+.currency-select:focus {
+  color: var(--emerald-400);
+}
+
+.currency-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  min-width: 24px;
+  height: 20px;
+}
+
+.currency-indicator.loading {
+  color: var(--blue-400);
+  animation: spin 1s linear infinite;
+}
+
+.currency-indicator.error {
+  color: var(--rose-400);
+}
+
+.currency-rate {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ── Tabs ───────────────────────────────────────────────────── */

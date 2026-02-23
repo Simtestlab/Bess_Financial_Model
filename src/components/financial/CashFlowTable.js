@@ -2,7 +2,7 @@
 
 import { fmtDollar } from '@/lib/formatters';
 
-export default function CashFlowTable({ model }) {
+export default function CashFlowTable({ model, currencySymbol = '$', exchangeRate = 1 }) {
     const displayN = Math.min(model.N, 10);
 
     const withY0 = (y0val, arr) => [y0val, ...arr.slice(0, displayN)];
@@ -53,7 +53,7 @@ export default function CashFlowTable({ model }) {
                                 <td>{row.label}</td>
                                 {row.data
                                     ? Array.from({ length: displayN + 1 }, (_, i) => (
-                                        <td key={i}>{fmtDollar(row.data[i] || 0)}</td>
+                                        <td key={i}>{fmtDollar(row.data[i] || 0, currencySymbol, exchangeRate)}</td>
                                     ))
                                     : Array.from({ length: displayN + 1 }, (_, i) => <td key={i}></td>)
                                 }

@@ -1,6 +1,11 @@
 'use client';
 
+import { useCurrency } from '@/lib/CurrencyContext';
+import CurrencyConverter from '@/components/CurrencyConverter';
+
 export default function SectionNav({ activeSection, setActiveSection }) {
+    const { selectedCurrency, exchangeRate, onCurrencyChange, onRateChange } = useCurrency();
+
     return (
         <nav id="section-nav" className="section-nav">
             <div className="section-nav-inner">
@@ -51,6 +56,13 @@ export default function SectionNav({ activeSection, setActiveSection }) {
                         BESS Handbook
                     </button>
                 </div>
+                <CurrencyConverter
+                    baseCurrency="USD"
+                    selectedCurrency={selectedCurrency}
+                    exchangeRate={exchangeRate}
+                    onCurrencyChange={onCurrencyChange}
+                    onRateChange={onRateChange}
+                />
             </div>
         </nav>
     );

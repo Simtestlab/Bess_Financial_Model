@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import FinancialSidebar from './FinancialSidebar';
 import FinancialMain from './FinancialMain';
 import { DEFAULTS, buildParams, runModel } from '@/lib/engine';
+import { useCurrency } from '@/lib/CurrencyContext';
+import { getCurrencyInfo } from '@/lib/currency';
 import {
     runSensitivity,
     runDegradationSensitivity,
@@ -14,6 +16,7 @@ import {
 export default function FinancialSection() {
     const [inputs, setInputs] = useState({ ...DEFAULTS });
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const { selectedCurrency, exchangeRate } = useCurrency();
     const recalcTimerRef = useRef(null);
     const [model, setModel] = useState(null);
     const [params, setParams] = useState(null);
@@ -57,6 +60,9 @@ export default function FinancialSection() {
         setSidebarCollapsed(prev => !prev);
     }, []);
 
+    const currencyInfo = getCurrencyInfo(selectedCurrency);
+    const currencySymbol = currencyInfo?.symbol || '$';
+
     return (
         <>
             <FinancialSidebar
@@ -72,6 +78,9 @@ export default function FinancialSection() {
                 inputs={inputs}
                 collapsed={sidebarCollapsed}
                 onToggleSidebar={toggleSidebar}
+                selectedCurrency={selectedCurrency}
+                exchangeRate={exchangeRate}
+                currencySymbol={currencySymbol}
             />
         </>
     );

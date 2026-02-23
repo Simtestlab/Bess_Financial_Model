@@ -9,7 +9,16 @@ import CashFlowTable from './CashFlowTable';
 import SensitivityPanel from './SensitivityPanel';
 import ChartsPanel from './ChartsPanel';
 
-export default function FinancialMain({ model, params, inputs, collapsed, onToggleSidebar }) {
+export default function FinancialMain({ 
+    model, 
+    params, 
+    inputs, 
+    collapsed, 
+    onToggleSidebar,
+    selectedCurrency,
+    exchangeRate,
+    currencySymbol
+}) {
     const [activeTab, setActiveTab] = useState('tab-income');
 
     const tabs = [
@@ -41,7 +50,7 @@ export default function FinancialMain({ model, params, inputs, collapsed, onTogg
                     </div>
                     <div className="kpi-card kpi-npv">
                         <span className="kpi-label">NPV @ <span id="kpi-npv-rate">{params ? (params.discountRate * 100).toFixed(0) : '8'}</span>%</span>
-                        <span id="kpi-npv" className="kpi-value">{model ? fmtDollar(model.npv) : '—'}</span>
+                        <span id="kpi-npv" className="kpi-value">{model ? fmtDollar(model.npv, currencySymbol, exchangeRate) : '—'}</span>
                     </div>
                     <div className="kpi-card kpi-payback">
                         <span className="kpi-label">Payback Period</span>
@@ -49,7 +58,7 @@ export default function FinancialMain({ model, params, inputs, collapsed, onTogg
                     </div>
                     <div className="kpi-card kpi-rev">
                         <span className="kpi-label">Year 1 Revenue</span>
-                        <span id="kpi-rev" className="kpi-value">{model ? fmtDollar(model.totalRevenue[0]) : '—'}</span>
+                        <span id="kpi-rev" className="kpi-value">{model ? fmtDollar(model.totalRevenue[0], currencySymbol, exchangeRate) : '—'}</span>
                     </div>
                 </div>
                 <button id="btn-export" className="btn-export" title="Export CSV" onClick={handleExport}>
@@ -80,22 +89,22 @@ export default function FinancialMain({ model, params, inputs, collapsed, onTogg
             <div className="tab-panels">
                 <section id="tab-income" className={`tab-panel ${activeTab === 'tab-income' ? 'active' : ''}`} role="tabpanel">
                     <h2>Income Statement <span className="subtitle">Projected Annual P&amp;L</span></h2>
-                    {model && <IncomeTable model={model} />}
+                    {model && <IncomeTable model={model} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />}
                 </section>
 
                 <section id="tab-cashflow" className={`tab-panel ${activeTab === 'tab-cashflow' ? 'active' : ''}`} role="tabpanel">
                     <h2>Cash Flow Statement <span className="subtitle">Project &amp; Equity Cash Flows</span></h2>
-                    {model && <CashFlowTable model={model} />}
+                    {model && <CashFlowTable model={model} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />}
                 </section>
 
                 <section id="tab-sensitivity" className={`tab-panel ${activeTab === 'tab-sensitivity' ? 'active' : ''}`} role="tabpanel">
                     <h2>Sensitivity Analysis <span className="subtitle">Impact on Key Metrics</span></h2>
-                    {params && <SensitivityPanel params={params} />}
+                    {params && <SensitivityPanel params={params} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />}
                 </section>
 
                 <section id="tab-charts" className={`tab-panel ${activeTab === 'tab-charts' ? 'active' : ''}`} role="tabpanel">
                     <h2>Financial Charts <span className="subtitle">Visual Analytics</span></h2>
-                    {model && <ChartsPanel model={model} params={params} />}
+                    {model && <ChartsPanel model={model} params={params} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />}
                 </section>
             </div>
         </main>

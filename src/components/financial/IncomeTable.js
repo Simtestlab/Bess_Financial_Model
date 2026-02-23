@@ -2,7 +2,7 @@
 
 import { fmtDollar, fmtMWh } from '@/lib/formatters';
 
-export default function IncomeTable({ model }) {
+export default function IncomeTable({ model, currencySymbol = '$', exchangeRate = 1 }) {
     const displayN = Math.min(model.N, 10);
 
     const rows = [
@@ -56,7 +56,7 @@ export default function IncomeTable({ model }) {
                                 {row.data
                                     ? Array.from({ length: displayN }, (_, y) => (
                                         <td key={y}>
-                                            {row.format === 'mwh' ? fmtMWh(row.data[y]) : fmtDollar(row.data[y])}
+                                            {row.format === 'mwh' ? fmtMWh(row.data[y]) : fmtDollar(row.data[y], currencySymbol, exchangeRate)}
                                         </td>
                                     ))
                                     : Array.from({ length: displayN }, (_, y) => <td key={y}></td>)

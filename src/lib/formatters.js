@@ -2,12 +2,20 @@
    Formatting Helpers
    ============================================================ */
 
-export function fmtDollar(val) {
+/**
+ * Format a value as currency with optional exchange rate
+ * @param {number} val - Value to format
+ * @param {string} symbol - Currency symbol (default: '$')
+ * @param {number} exchangeRate - Exchange rate (default: 1)
+ * @returns {string} Formatted currency string
+ */
+export function fmtDollar(val, symbol = '$', exchangeRate = 1) {
     if (val == null || isNaN(val)) return '—';
-    const abs = Math.abs(val);
-    const sign = val < 0 ? '-' : '';
-    if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(2) + 'M';
-    return sign + '$' + Math.round(abs).toLocaleString('en-US');
+    const convertedVal = val * exchangeRate;
+    const abs = Math.abs(convertedVal);
+    const sign = convertedVal < 0 ? '-' : '';
+    if (abs >= 1e6) return sign + symbol + (abs / 1e6).toFixed(2) + 'M';
+    return sign + symbol + Math.round(abs).toLocaleString('en-US');
 }
 
 export function fmtPct(val) {
@@ -25,9 +33,18 @@ export function fmtMWh(val) {
     return Math.round(val).toLocaleString('en-US') + ' MWh';
 }
 
-export function fmtCurrency(val) {
-    const abs = Math.abs(val);
-    const sign = val < 0 ? '-' : '';
-    if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(2) + 'M';
-    return sign + '$' + Math.round(abs).toLocaleString('en-US');
+/**
+ * Format a value as currency with optional exchange rate
+ * @param {number} val - Value to format
+ * @param {string} symbol - Currency symbol (default: '$')
+ * @param {number} exchangeRate - Exchange rate (default: 1)
+ * @returns {string} Formatted currency string
+ */
+export function fmtCurrency(val, symbol = '$', exchangeRate = 1) {
+    if (val == null || isNaN(val)) return '—';
+    const convertedVal = val * exchangeRate;
+    const abs = Math.abs(convertedVal);
+    const sign = convertedVal < 0 ? '-' : '';
+    if (abs >= 1e6) return sign + symbol + (abs / 1e6).toFixed(2) + 'M';
+    return sign + symbol + Math.round(abs).toLocaleString('en-US');
 }

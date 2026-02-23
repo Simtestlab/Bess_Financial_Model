@@ -11,7 +11,7 @@ import {
 } from '@/lib/engine';
 import TornadoChart from './TornadoChart';
 
-export default function SensitivityPanel({ params }) {
+export default function SensitivityPanel({ params, currencySymbol = '$', exchangeRate = 1 }) {
     const spreadLabels = ['-20%', 'Base', '+20%'];
     const spreadMults = [0.8, 1.0, 1.2];
     const capexLabels = ['-20%', 'Base', '+20%'];
@@ -57,7 +57,7 @@ export default function SensitivityPanel({ params }) {
                                     <td>{spreadLabels[i]}</td>
                                     <td>${r.spread.toFixed(0)}/MWh</td>
                                     <td>{fmtPct(r.model.irr)}</td>
-                                    <td>{fmtDollar(r.model.npv)}</td>
+                                    <td>{fmtDollar(r.model.npv, currencySymbol, exchangeRate)}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -75,9 +75,9 @@ export default function SensitivityPanel({ params }) {
                             {capexResults.map((r, i) => (
                                 <tr key={i} className={i === 1 ? 'base-row' : ''}>
                                     <td>{capexLabels[i]}</td>
-                                    <td>{fmtDollar(r.value)}</td>
+                                    <td>{fmtDollar(r.value, currencySymbol, exchangeRate)}</td>
                                     <td>{fmtPct(r.model.irr)}</td>
-                                    <td>{fmtDollar(r.model.npv)}</td>
+                                    <td>{fmtDollar(r.model.npv, currencySymbol, exchangeRate)}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -96,7 +96,7 @@ export default function SensitivityPanel({ params }) {
                                 <tr key={i} className={i === 1 ? 'base-row' : ''}>
                                     <td>{effLabels[i]}</td>
                                     <td>{(r.efficiency * 100).toFixed(1)}%</td>
-                                    <td>{fmtDollar(r.yr1Revenue)}</td>
+                                    <td>{fmtDollar(r.yr1Revenue, currencySymbol, exchangeRate)}</td>
                                     <td>{fmtPct(r.model.irr)}</td>
                                 </tr>
                             ))}
@@ -117,7 +117,7 @@ export default function SensitivityPanel({ params }) {
                                     <td>{(r.rate * 100).toFixed(1)}%</td>
                                     <td>{r.yr10Cap.toFixed(2)} MWh</td>
                                     <td>{fmtPct(r.model.irr)}</td>
-                                    <td>{fmtDollar(r.model.npv)}</td>
+                                    <td>{fmtDollar(r.model.npv, currencySymbol, exchangeRate)}</td>
                                 </tr>
                             ))}
                         </tbody>
