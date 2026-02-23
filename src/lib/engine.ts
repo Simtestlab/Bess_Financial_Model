@@ -253,33 +253,50 @@ export function computePPAVolume(params) {
     return Math.round(params.capacity * cycles * params.arbDays * params.rte * params.availability);
 }
 
+/* ──────────────────────────────────────────────────────────────
+   DEFAULT INPUT VALUES
+   NOTE: All monetary values are stored internally in USD ($)
+   The UI converts these to the selected currency for display
+   Example: 1 USD ≈ 90.90 INR (rates fetched from API)
+   ────────────────────────────────────────────────────────────── */
 export const DEFAULTS = {
-    capacity: 8.5,
-    arbDays: 280,
-    availability: 98,
-    rte: 90,
-    chargePrice: 30,
-    dischargePrice: 75,
-    ppaVol: 3500,
-    ppaPrice: 80,
-    ppaEsc: 3,
-    ancillary: 120000,
-    otherRev: 50000,
-    capex: 2750000,
-    insurance: 0.5,
-    varOm: 5,
-    fixedOm: 299000,
-    inflation: 2,
-    adminCost: 20000,
-    preventiveMaintenance: 30000,
-    projectLife: 25,
-    degradation: 2.5,
-    cyclesPerDay: 1.5,
-    debtAmount: 1500000,
-    debtRate: 5,
-    loanTerm: 10,
-    taxRate: 25,
-    discountRate: 8,
+    // Technical Parameters
+    capacity: 8.5,              // MWh
+    arbDays: 280,               // days
+    availability: 98,           // %
+    rte: 90,                    // % (Round-trip efficiency)
+    
+    // Energy Pricing (USD)
+    chargePrice: 30,            // $/MWh
+    dischargePrice: 75,         // $/MWh
+    
+    // Revenue Parameters (USD)
+    ppaVol: 3500,               // MWh/yr
+    ppaPrice: 80,               // $/MWh
+    ppaEsc: 3,                  // %
+    ancillary: 120000,          // $/yr
+    otherRev: 50000,            // $/yr
+    
+    // Cost & Investment (USD)
+    capex: 2750000,             // $ (Total CAPEX)
+    insurance: 0.5,             // %
+    varOm: 5,                   // %
+    fixedOm: 299000,            // $/yr
+    inflation: 2,               // %
+    adminCost: 20000,           // $/yr
+    preventiveMaintenance: 30000, // $/yr
+    projectLife: 25,            // years
+    degradation: 2.5,           // %
+    cyclesPerDay: 1.5,          // cycles/day
+    
+    // Debt Financing (USD)
+    debtAmount: 1500000,        // $
+    debtRate: 5,                // %
+    loanTerm: 10,               // years
+    
+    // Tax & Discount
+    taxRate: 25,                // %
+    discountRate: 8,            // %
 };
 
 export function buildParams(inputs: any): any {

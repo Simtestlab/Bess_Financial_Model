@@ -41,21 +41,24 @@ interface NumInputProps {
     id: string; label: string; value: number; unit: string;
     onChange: (v: number) => void;
     step?: number; min?: number; max?: number;
+    displayRate?: number; // multiply display value, divide on commit
 }
-function NumInput({ id, label, value, unit, onChange, step, min, max }: NumInputProps) {
-    const [text, setText] = useState(value != null ? String(value) : '');
+function NumInput({ id, label, value, unit, onChange, step, min, max, displayRate }: NumInputProps) {
+    const r = displayRate || 1;
+    const displayVal = value != null ? (Math.round(value * r * 100) / 100) : 0;
+    const [text, setText] = useState(String(displayVal));
     const timer = useRef<any>(null);
-    useEffect(() => { setText(value != null ? String(value) : ''); }, [value]);
+    useEffect(() => { setText(String(Math.round(value * r * 100) / 100)); }, [value, r]);
     const commit = () => {
         const p = parseFloat(text);
-        if (!isNaN(p)) onChange(p);
+        if (!isNaN(p)) onChange(p / r);
         else if (text !== '' && text !== '-') { onChange(0); setText('0'); }
     };
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const t = e.target.value; setText(t);
         clearTimeout(timer.current);
         const p = parseFloat(t);
-        if (!isNaN(p)) timer.current = setTimeout(() => onChange(p), 300);
+        if (!isNaN(p)) timer.current = setTimeout(() => onChange(p / r), 300);
     };
     return (
         <div className="bess-field">
@@ -75,21 +78,24 @@ function NumInput({ id, label, value, unit, onChange, step, min, max }: NumInput
 interface CellInputProps {
     value: number; onChange: (v: number) => void;
     step?: number; min?: number; style?: React.CSSProperties;
+    displayRate?: number;
 }
-function CellInput({ value, onChange, step, min, style }: CellInputProps) {
-    const [text, setText] = useState(value != null ? String(value) : '');
+function CellInput({ value, onChange, step, min, style, displayRate }: CellInputProps) {
+    const r = displayRate || 1;
+    const displayVal = value != null ? (Math.round(value * r * 100) / 100) : 0;
+    const [text, setText] = useState(String(displayVal));
     const timer = useRef<any>(null);
-    useEffect(() => { setText(value != null ? String(value) : ''); }, [value]);
+    useEffect(() => { setText(String(Math.round(value * r * 100) / 100)); }, [value, r]);
     const commit = () => {
         const p = parseFloat(text);
-        if (!isNaN(p)) onChange(p);
+        if (!isNaN(p)) onChange(p / r);
         else { onChange(0); setText('0'); }
     };
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const t = e.target.value; setText(t);
         clearTimeout(timer.current);
         const p = parseFloat(t);
-        if (!isNaN(p)) timer.current = setTimeout(() => onChange(p), 300);
+        if (!isNaN(p)) timer.current = setTimeout(() => onChange(p / r), 300);
     };
     return (
         <input className="bom-cell-input" type="number" step={step || 1} min={min}
@@ -119,10 +125,27 @@ export default function HandbookSection() {
     const [activeTab, setActiveTab] = useState<string>('cell');
     const timerRef = useRef<any>(null);
 
-    const { selectedCurrency, exchangeRate } = useCurrency();
+    /* ── Currency: BESS costs are in INR, so convert INR → target ── */
+    const { selectedCurrency } = useCurrency();
     const cInfo = getCurrencyInfo(selectedCurrency);
     const sym = cInfo?.symbol || '$';
-    const fc = (v: number) => fmtCurrency(v, sym, exchangeRate);
+    const [bessRate, setBessRate] = useState<number>(1);
+    useEffect(() => {
+        if (selectedCurrency === 'INR') {
+            setBessRate(1);
+            return;
+        }
+        let cancelled = false;
+        (async () => {
+            try {
+                const { getExchangeRate } = await import('@/lib/currency');
+                const rate = await getExchangeRate('INR', selectedCurrency);
+                if (!cancelled) setBessRate(rate);
+            } catch { if (!cancelled) setBessRate(1); }
+        })();
+        return () => { cancelled = true; };
+    }, [selectedCurrency]);
+    const fc = (v: number) => fmtCurrency(v, sym, bessRate);
 
     useEffect(() => {
         const saved = loadInputs();
@@ -219,7 +242,7 @@ export default function HandbookSection() {
                                 </div>
                                 <NumInput id="cell-cap" label="Cell Capacity" value={inputs.cellCapacity} unit="Ah" step={1} min={1} onChange={c('cellCapacity')} />
                                 <NumInput id="cell-volt" label="Nominal Voltage" value={inputs.nominalVoltage} unit="V" step={0.1} min={0.1} onChange={c('nominalVoltage')} />
-                                <NumInput id="cell-cost" label="Cell Cost" value={inputs.cellCost} unit={sym} step={100} min={0} onChange={c('cellCost')} />
+                                <NumInput id="cell-cost" label="Cell Cost" value={inputs.cellCost} unit={sym} step={100} min={0} onChange={c('cellCost')} displayRate={bessRate} />
                                 <NumInput id="cell-dod" label="Depth of Discharge" value={inputs.dod} unit="(0-1)" step={0.01} min={0.01} max={1} onChange={c('dod')} />
                                 <NumInput id="cell-eff" label="Efficiency" value={inputs.efficiency} unit="(0-1)" step={0.01} min={0.5} max={1} onChange={c('efficiency')} />
                                 <NumInput id="cell-eol" label="End of Life (EOL)" value={inputs.eol} unit="(0-1)" step={0.01} min={0.1} max={1} onChange={c('eol')} />
@@ -257,15 +280,15 @@ export default function HandbookSection() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr><td>LFP Cells</td><td className="bom-td-qty"><CellInput value={inputs.cellsPerModule} onChange={c('cellsPerModule')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.cellCost} onChange={c('cellCost')} step={100} min={0} /></td></tr>
-                                        <tr><td>Mechanical Housing</td><td className="bom-td-qty"><CellInput value={inputs.housingQty} onChange={c('housingQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.housingCost} onChange={c('housingCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Busbar</td><td className="bom-td-qty"><CellInput value={inputs.busbarQty} onChange={c('busbarQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.busbarCost} onChange={c('busbarCost')} step={10} min={0} /></td></tr>
-                                        <tr><td>CSC</td><td className="bom-td-qty"><CellInput value={inputs.cscQty} onChange={c('cscQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.cscCost} onChange={c('cscCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Connectors</td><td className="bom-td-qty"><CellInput value={inputs.connectorsQty} onChange={c('connectorsQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.connectorsCost} onChange={c('connectorsCost')} step={10} min={0} /></td></tr>
-                                        <tr><td>Insulation & Spacers</td><td className="bom-td-qty"><CellInput value={inputs.insulationQty} onChange={c('insulationQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.insulationCost} onChange={c('insulationCost')} step={50} min={0} /></td></tr>
-                                        <tr><td>Fasteners & Hardware</td><td className="bom-td-qty"><CellInput value={inputs.fastenersQty} onChange={c('fastenersQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.fastenersCost} onChange={c('fastenersCost')} step={50} min={0} /></td></tr>
-                                        <tr><td>Cell Adaptor</td><td className="bom-td-qty"><CellInput value={inputs.cellAdaptorQty} onChange={c('cellAdaptorQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.cellAdaptorCost} onChange={c('cellAdaptorCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Labour (assembly)</td><td className="bom-td-qty"><CellInput value={inputs.labourQty} onChange={c('labourQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.labourCost} onChange={c('labourCost')} step={50} min={0} /></td></tr>
+                                        <tr><td>LFP Cells</td><td className="bom-td-qty"><CellInput value={inputs.cellsPerModule} onChange={c('cellsPerModule')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.cellCost} onChange={c('cellCost')} step={100} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Mechanical Housing</td><td className="bom-td-qty"><CellInput value={inputs.housingQty} onChange={c('housingQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.housingCost} onChange={c('housingCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Busbar</td><td className="bom-td-qty"><CellInput value={inputs.busbarQty} onChange={c('busbarQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.busbarCost} onChange={c('busbarCost')} step={10} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>CSC</td><td className="bom-td-qty"><CellInput value={inputs.cscQty} onChange={c('cscQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.cscCost} onChange={c('cscCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Connectors</td><td className="bom-td-qty"><CellInput value={inputs.connectorsQty} onChange={c('connectorsQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.connectorsCost} onChange={c('connectorsCost')} step={10} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Insulation & Spacers</td><td className="bom-td-qty"><CellInput value={inputs.insulationQty} onChange={c('insulationQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.insulationCost} onChange={c('insulationCost')} step={50} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Fasteners & Hardware</td><td className="bom-td-qty"><CellInput value={inputs.fastenersQty} onChange={c('fastenersQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.fastenersCost} onChange={c('fastenersCost')} step={50} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Cell Adaptor</td><td className="bom-td-qty"><CellInput value={inputs.cellAdaptorQty} onChange={c('cellAdaptorQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.cellAdaptorCost} onChange={c('cellAdaptorCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Labour (assembly)</td><td className="bom-td-qty"><CellInput value={inputs.labourQty} onChange={c('labourQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.labourCost} onChange={c('labourCost')} step={50} min={0} displayRate={bessRate} /></td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -314,18 +337,18 @@ export default function HandbookSection() {
                                     </thead>
                                     <tbody>
                                         <tr><td>Modules</td><td className="bom-td-qty"><CellInput value={inputs.modulesPerRack} onChange={c('modulesPerRack')} step={1} min={1} /></td><td className="bom-td-price">{o ? fc(o.modOut.totalModuleCost) : '--'}</td></tr>
-                                        <tr><td>Rack Frame</td><td className="bom-td-qty"><CellInput value={inputs.rackFrameQty} onChange={c('rackFrameQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.rackFrameCost} onChange={c('rackFrameCost')} step={5000} min={0} /></td></tr>
-                                        <tr><td>Pack Monitor</td><td className="bom-td-qty"><CellInput value={inputs.packMonitorQty} onChange={c('packMonitorQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.packMonitorCost} onChange={c('packMonitorCost')} step={1000} min={0} /></td></tr>
-                                        <tr><td>Contactors</td><td className="bom-td-qty"><CellInput value={inputs.contactorQty} onChange={c('contactorQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.contactorCost} onChange={c('contactorCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>DC Breaker</td><td className="bom-td-qty"><CellInput value={inputs.dcBreakerQty} onChange={c('dcBreakerQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.dcBreakerCost} onChange={c('dcBreakerCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>DC Fuse</td><td className="bom-td-qty"><CellInput value={inputs.dcFuseQty} onChange={c('dcFuseQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.dcFuseCost} onChange={c('dcFuseCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Mounting Rails</td><td className="bom-td-qty"><CellInput value={inputs.mountingRailsQty} onChange={c('mountingRailsQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.mountingRailsCost} onChange={c('mountingRailsCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Rack Labour</td><td className="bom-td-qty"><CellInput value={inputs.rackLabourQty} onChange={c('rackLabourQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.rackLabourCost} onChange={c('rackLabourCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Cable – Red</td><td className="bom-td-qty"><CellInput value={inputs.cableLengthPerRack} onChange={c('cableLengthPerRack')} step={1} min={0} /><span className="bom-unit-hint">m</span></td><td className="bom-td-price"><CellInput value={inputs.cableRedPricePerM} onChange={c('cableRedPricePerM')} step={10} min={0} /><span className="bom-unit-hint">/m</span></td></tr>
-                                        <tr><td>Cable – Black</td><td className="bom-td-qty"><CellInput value={inputs.cableLengthPerRack} onChange={c('cableLengthPerRack')} step={1} min={0} /><span className="bom-unit-hint">m</span></td><td className="bom-td-price"><CellInput value={inputs.cableBlackPricePerM} onChange={c('cableBlackPricePerM')} step={10} min={0} /><span className="bom-unit-hint">/m</span></td></tr>
-                                        <tr><td>BMS Controller</td><td className="bom-td-qty"><CellInput value={inputs.bmsControllerQty} onChange={c('bmsControllerQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.bmsControllerCost} onChange={c('bmsControllerCost')} step={1000} min={0} /></td></tr>
-                                        <tr><td>Daisy Chain Converter</td><td className="bom-td-qty"><CellInput value={inputs.daisyChainConverterQty} onChange={c('daisyChainConverterQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.daisyChainConverterCost} onChange={c('daisyChainConverterCost')} step={500} min={0} /></td></tr>
-                                        <tr><td>Daisy Chain Cable</td><td className="bom-td-qty"><CellInput value={inputs.daisyChainCableLengthPerRack} onChange={c('daisyChainCableLengthPerRack')} step={1} min={0} /><span className="bom-unit-hint">m</span></td><td className="bom-td-price"><CellInput value={inputs.daisyChainCableCostPerM} onChange={c('daisyChainCableCostPerM')} step={10} min={0} /><span className="bom-unit-hint">/m</span></td></tr>
+                                        <tr><td>Rack Frame</td><td className="bom-td-qty"><CellInput value={inputs.rackFrameQty} onChange={c('rackFrameQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.rackFrameCost} onChange={c('rackFrameCost')} step={5000} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Pack Monitor</td><td className="bom-td-qty"><CellInput value={inputs.packMonitorQty} onChange={c('packMonitorQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.packMonitorCost} onChange={c('packMonitorCost')} step={1000} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Contactors</td><td className="bom-td-qty"><CellInput value={inputs.contactorQty} onChange={c('contactorQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.contactorCost} onChange={c('contactorCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>DC Breaker</td><td className="bom-td-qty"><CellInput value={inputs.dcBreakerQty} onChange={c('dcBreakerQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.dcBreakerCost} onChange={c('dcBreakerCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>DC Fuse</td><td className="bom-td-qty"><CellInput value={inputs.dcFuseQty} onChange={c('dcFuseQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.dcFuseCost} onChange={c('dcFuseCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Mounting Rails</td><td className="bom-td-qty"><CellInput value={inputs.mountingRailsQty} onChange={c('mountingRailsQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.mountingRailsCost} onChange={c('mountingRailsCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Rack Labour</td><td className="bom-td-qty"><CellInput value={inputs.rackLabourQty} onChange={c('rackLabourQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.rackLabourCost} onChange={c('rackLabourCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Cable – Red</td><td className="bom-td-qty"><CellInput value={inputs.cableLengthPerRack} onChange={c('cableLengthPerRack')} step={1} min={0} /><span className="bom-unit-hint">m</span></td><td className="bom-td-price"><CellInput value={inputs.cableRedPricePerM} onChange={c('cableRedPricePerM')} step={10} min={0} displayRate={bessRate} /><span className="bom-unit-hint">/m</span></td></tr>
+                                        <tr><td>Cable – Black</td><td className="bom-td-qty"><CellInput value={inputs.cableLengthPerRack} onChange={c('cableLengthPerRack')} step={1} min={0} /><span className="bom-unit-hint">m</span></td><td className="bom-td-price"><CellInput value={inputs.cableBlackPricePerM} onChange={c('cableBlackPricePerM')} step={10} min={0} displayRate={bessRate} /><span className="bom-unit-hint">/m</span></td></tr>
+                                        <tr><td>BMS Controller</td><td className="bom-td-qty"><CellInput value={inputs.bmsControllerQty} onChange={c('bmsControllerQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.bmsControllerCost} onChange={c('bmsControllerCost')} step={1000} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Daisy Chain Converter</td><td className="bom-td-qty"><CellInput value={inputs.daisyChainConverterQty} onChange={c('daisyChainConverterQty')} step={1} min={1} /></td><td className="bom-td-price"><CellInput value={inputs.daisyChainConverterCost} onChange={c('daisyChainConverterCost')} step={500} min={0} displayRate={bessRate} /></td></tr>
+                                        <tr><td>Daisy Chain Cable</td><td className="bom-td-qty"><CellInput value={inputs.daisyChainCableLengthPerRack} onChange={c('daisyChainCableLengthPerRack')} step={1} min={0} /><span className="bom-unit-hint">m</span></td><td className="bom-td-price"><CellInput value={inputs.daisyChainCableCostPerM} onChange={c('daisyChainCableCostPerM')} step={10} min={0} displayRate={bessRate} /><span className="bom-unit-hint">/m</span></td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -365,10 +388,10 @@ export default function HandbookSection() {
                                 <h3>🏗️ System Inputs</h3>
                                 <NumInput id="sys-mw" label="System Power (AC)" value={inputs.systemMW} unit="MW" step={0.1} min={0.1} onChange={c('systemMW')} />
                                 <NumInput id="sys-crate" label="C-Rate" value={inputs.cRate} unit="C" step={0.1} min={0.1} onChange={c('cRate')} />
-                                <NumInput id="sys-bms" label="Master BMS Cost" value={inputs.masterBMSCost} unit={sym} step={10000} min={0} onChange={c('masterBMSCost')} />
-                                <NumInput id="sys-bms-h" label="BMS Housing Cost" value={inputs.bmsHousingCost} unit={sym} step={1000} min={0} onChange={c('bmsHousingCost')} />
-                                <NumInput id="sys-safety" label="Safety Systems Cost" value={inputs.safetySystemsCost} unit={sym} step={10000} min={0} onChange={c('safetySystemsCost')} />
-                                <NumInput id="sys-pcs" label="PCS Cost (per MW)" value={inputs.pcsCost} unit={`${sym}/MW`} step={10000} min={0} onChange={c('pcsCost')} />
+                                <NumInput id="sys-bms" label="Master BMS Cost" value={inputs.masterBMSCost} unit={sym} step={10000} min={0} onChange={c('masterBMSCost')} displayRate={bessRate} />
+                                <NumInput id="sys-bms-h" label="BMS Housing Cost" value={inputs.bmsHousingCost} unit={sym} step={1000} min={0} onChange={c('bmsHousingCost')} displayRate={bessRate} />
+                                <NumInput id="sys-safety" label="Safety Systems Cost" value={inputs.safetySystemsCost} unit={sym} step={10000} min={0} onChange={c('safetySystemsCost')} displayRate={bessRate} />
+                                <NumInput id="sys-pcs" label="PCS Cost (per MW)" value={inputs.pcsCost} unit={`${sym}/MW`} step={10000} min={0} onChange={c('pcsCost')} displayRate={bessRate} />
                             </div>
                             <div className="bess-results-card">
                                 <h3>⚡ Calculated</h3>
@@ -408,11 +431,11 @@ export default function HandbookSection() {
                         <div className="bess-split">
                             <div className="bess-inputs-card">
                                 <h3>⚡ Balance of Plant Inputs</h3>
-                                <NumInput id="bop-civil" label="Civil Works" value={inputs.civilWorks} unit={sym} step={50000} min={0} onChange={c('civilWorks')} />
-                                <NumInput id="bop-cable" label="AC Cabling" value={inputs.acCabling} unit={sym} step={10000} min={0} onChange={c('acCabling')} />
-                                <NumInput id="bop-earth" label="Earthing" value={inputs.earthing} unit={sym} step={10000} min={0} onChange={c('earthing')} />
-                                <NumInput id="bop-labour" label="Installation Labour" value={inputs.installationLabour} unit={sym} step={10000} min={0} onChange={c('installationLabour')} />
-                                <NumInput id="bop-comm" label="Communication" value={inputs.communication} unit={sym} step={10000} min={0} onChange={c('communication')} />
+                                <NumInput id="bop-civil" label="Civil Works" value={inputs.civilWorks} unit={sym} step={50000} min={0} onChange={c('civilWorks')} displayRate={bessRate} />
+                                <NumInput id="bop-cable" label="AC Cabling" value={inputs.acCabling} unit={sym} step={10000} min={0} onChange={c('acCabling')} displayRate={bessRate} />
+                                <NumInput id="bop-earth" label="Earthing" value={inputs.earthing} unit={sym} step={10000} min={0} onChange={c('earthing')} displayRate={bessRate} />
+                                <NumInput id="bop-labour" label="Installation Labour" value={inputs.installationLabour} unit={sym} step={10000} min={0} onChange={c('installationLabour')} displayRate={bessRate} />
+                                <NumInput id="bop-comm" label="Communication" value={inputs.communication} unit={sym} step={10000} min={0} onChange={c('communication')} displayRate={bessRate} />
                             </div>
                             <div className="bess-results-card">
                                 <h3>💰 BOP Cost</h3>
