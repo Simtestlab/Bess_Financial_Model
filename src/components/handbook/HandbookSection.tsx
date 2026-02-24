@@ -6,7 +6,7 @@ import { useCurrency } from '@/lib/CurrencyContext';
 import { getCurrencyInfo } from '@/lib/currency';
 import { fmtCurrency } from '@/lib/formatters';
 
-const STORAGE_KEY = 'bess-sizing-inputs-v3';
+const STORAGE_KEY = 'bess-sizing-inputs-v4';
 
 function saveInputs(inputs: any) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(inputs)); } catch { }
@@ -28,9 +28,13 @@ function fmtInt(n: number | null | undefined): string {
 function NumInput({ id, label, value, unit, onChange, step, min, max, displayRate }:
     { id: string; label: string; value: number; unit: string; onChange: (v: number) => void; step?: number; min?: number; max?: number; displayRate?: number }) {
     const r = displayRate || 1;
-    const [text, setText] = useState(String(Math.round(value * r * 100) / 100));
+    const formatValue = useCallback((v: number) => {
+        const rounded = Math.round(v * r * 100) / 100;
+        return Number.isInteger(rounded) ? String(Math.round(rounded)) : String(rounded);
+    }, [r]);
+    const [text, setText] = useState(formatValue(value));
     const timer = useRef<any>(null);
-    useEffect(() => { setText(String(Math.round(value * r * 100) / 100)); }, [value, r]);
+    useEffect(() => { setText(formatValue(value)); }, [value, formatValue]);
     const commit = () => { const p = parseFloat(text); if (!isNaN(p)) onChange(p / r); else { onChange(0); setText('0'); } };
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const t = e.target.value; setText(t); clearTimeout(timer.current);
@@ -54,9 +58,13 @@ function NumInput({ id, label, value, unit, onChange, step, min, max, displayRat
 function CellInput({ value, onChange, step, min, displayRate }:
     { value: number; onChange: (v: number) => void; step?: number; min?: number; displayRate?: number }) {
     const r = displayRate || 1;
-    const [text, setText] = useState(String(Math.round(value * r * 100) / 100));
+    const formatValue = useCallback((v: number) => {
+        const rounded = Math.round(v * r * 100) / 100;
+        return Number.isInteger(rounded) ? String(Math.round(rounded)) : String(rounded);
+    }, [r]);
+    const [text, setText] = useState(formatValue(value));
     const timer = useRef<any>(null);
-    useEffect(() => { setText(String(Math.round(value * r * 100) / 100)); }, [value, r]);
+    useEffect(() => { setText(formatValue(value)); }, [value, formatValue]);
     const commit = () => { const p = parseFloat(text); if (!isNaN(p)) onChange(p / r); else { onChange(0); setText('0'); } };
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const t = e.target.value; setText(t); clearTimeout(timer.current);
@@ -137,10 +145,10 @@ export default function HandbookSection() {
     const sym = cInfo?.symbol || '$';
     const [bessRate, setBessRate] = useState<number>(1);
     useEffect(() => {
-        if (selectedCurrency === 'INR') { setBessRate(1); return; }
+        if (selectedCurrency === 'USD') { setBessRate(1); return; }
         let cancelled = false;
         (async () => {
-            try { const { getExchangeRate } = await import('@/lib/currency'); const rate = await getExchangeRate('INR', selectedCurrency); if (!cancelled) setBessRate(rate); }
+            try { const { getExchangeRate } = await import('@/lib/currency'); const rate = await getExchangeRate('USD', selectedCurrency); if (!cancelled) setBessRate(rate); }
             catch { if (!cancelled) setBessRate(1); }
         })();
         return () => { cancelled = true; };

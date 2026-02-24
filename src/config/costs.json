@@ -1,0 +1,63 @@
+{
+  "description": "Default cost configuration for BESS Financial Model. All monetary values in INR unless specified.",
+  "version": "1.0",
+  "lastUpdated": "2026-02-24",
+  
+  "cell": {
+    "cellCost": 6000
+  },
+  
+  "module": {
+    "housingCost": 4000,
+    "busbarCost": 250,
+    "cscCost": 4000,
+    "connectorsCost": 200,
+    "insulationCost": 200,
+    "fastenersCost": 300,
+    "cellAdaptorCost": 4000,
+    "labourCost": 800
+  },
+  
+  "pack": {
+    "rackFrameCost": 40000,
+    "packMonitorCost": 5000,
+    "contactorCost": 3500,
+    "dcBreakerCost": 6000,
+    "dcFuseCost": 3000,
+    "mountingRailsCost": 3000,
+    "rackLabourCost": 400,
+    "cableRedPricePerM": 680,
+    "cableBlackPricePerM": 680,
+    "bmsControllerCost": 10000,
+    "daisyChainConverterCost": 3000,
+    "daisyChainCableCostPerM": 250
+  },
+  
+  "system": {
+    "masterBMSCost": 10000,
+    "bmsHousingCost": 4000,
+    "safetySystemsCost": 50000,
+    "pcsCost": 1000000
+  },
+  
+  "bop": {
+    "civilWorks": 1500000,
+    "acCabling": 100000,
+    "earthing": 500000,
+    "installationLabour": 200000,
+    "communication": 200000
+  },
+  
+  "financial": {
+    "chargePrice": 3000,
+    "dischargePrice": 14400,
+    "ppaPrice": 3942000,
+    "ancillary": 120000,
+    "otherRev": 0,
+    "capex": 2509671,
+    "fixedOm": 300000,
+    "adminCost": 360000,
+    "preventiveMaintenance": 100000,
+    "debtAmount": 68189925
+  }
+}

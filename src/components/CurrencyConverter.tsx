@@ -8,21 +8,27 @@ export default function CurrencyConverter({ baseCurrency, selectedCurrency, exch
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        if (selectedCurrency !== baseCurrency) {
-            setLoading(true);
-            setError(null);
-            
-            getExchangeRate(baseCurrency, selectedCurrency)
-                .then(rate => {
-                    onRateChange(rate);
-                    setLoading(false);
-                })
-                .catch(err => {
-                    console.error('Exchange rate error:', err);
-                    setError('Failed to load rate');
-                    setLoading(false);
-                });
+        // Clear previous errors
+        setError(null);
+
+        // If switching back to base currency, reset rate to 1
+        if (selectedCurrency === baseCurrency) {
+            setLoading(false);
+            onRateChange(1);
+            return;
         }
+
+        setLoading(true);
+        getExchangeRate(baseCurrency, selectedCurrency)
+            .then(rate => {
+                onRateChange(rate);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error('Exchange rate error:', err);
+                setError('Failed to load rate');
+                setLoading(false);
+            });
     }, [selectedCurrency, baseCurrency, onRateChange]);
 
     const handleCurrencyChange = (e) => {

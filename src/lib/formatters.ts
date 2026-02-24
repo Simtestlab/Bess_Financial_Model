@@ -27,22 +27,22 @@ export function fmtDollar(val: number | null | undefined, symbol: string = '$', 
     const abs = Math.abs(convertedVal);
     const sign = convertedVal < 0 ? '-' : '';
     if (abs >= 1e6) return sign + symbol + (abs / 1e6).toFixed(2) + 'M';
-    return sign + symbol + Math.round(abs).toLocaleString('en-US');
+    return sign + symbol + abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export function fmtPct(val: number | null | undefined): string {
     if (val == null || isNaN(val)) return '—';
-    return (val * 100).toFixed(1) + '%';
+    return (val * 100).toFixed(2) + '%';
 }
 
 export function fmtYears(val: number | null | undefined): string {
     if (val == null || isNaN(val) || val > 100) return 'N/A';
-    return val.toFixed(1) + ' yrs';
+    return val.toFixed(2) + ' yrs';
 }
 
 export function fmtMWh(val: number | null | undefined): string {
     if (val == null || isNaN(val)) return '—';
-    return Math.round(val).toLocaleString('en-US') + ' MWh';
+    return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MWh';
 }
 
 /**
@@ -57,5 +57,5 @@ export function fmtCurrency(val: number | null | undefined, symbol: string = '$'
     const abs = Math.abs(convertedVal);
     const sign = convertedVal < 0 ? '-' : '';
     if (abs >= 1e6) return sign + symbol + (abs / 1e6).toFixed(2) + 'M';
-    return sign + symbol + Math.round(abs).toLocaleString('en-US');
+    return sign + symbol + abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }

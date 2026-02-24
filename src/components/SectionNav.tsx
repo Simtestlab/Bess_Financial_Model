@@ -57,7 +57,7 @@ export default function SectionNav({ activeSection, setActiveSection }) {
                     </button>
                 </div>
                 <CurrencyConverter
-                    baseCurrency="USD"
+                    baseCurrency="INR"
                     selectedCurrency={selectedCurrency}
                     exchangeRate={exchangeRate}
                     onCurrencyChange={onCurrencyChange}

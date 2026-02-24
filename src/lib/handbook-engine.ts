@@ -5,12 +5,14 @@
     Sections: Cell → Module → Pack → System → BOP → Summary
     ============================================================ */
 
+import costsConfig from '@/config/costs.json';
+
 // ── Section 1: Cell ────────────────────────────────────────────
 export const CELL_DEFAULTS = {
     cellChemistry: 'LFP',
-    cellCapacity: 100,        // Ah
+    cellCapacity: 314,        // Ah
     nominalVoltage: 3.2,      // V
-    cellCost: 2700,           // cost per cell
+    cellCost: costsConfig.cell.cellCost,
     dod: 0.9,
     efficiency: 0.98,
     eol: 0.8,
@@ -24,16 +26,16 @@ export function calcCell(c: typeof CELL_DEFAULTS) {
 
 // ── Section 2: Module ──────────────────────────────────────────
 export const MODULE_DEFAULTS = {
-    cellsPerModule: 12,
+    cellsPerModule: 16,
     // Qty + Unit Cost pairs  (cost is always PER UNIT)
-    housingQty: 1, housingCost: 10000,
-    busbarQty: 13, busbarCost: 250,
-    cscQty: 1, cscCost: 10000,
-    connectorsQty: 2, connectorsCost: 100,
-    insulationQty: 1, insulationCost: 200,
-    fastenersQty: 1, fastenersCost: 300,
-    cellAdaptorQty: 1, cellAdaptorCost: 19000,
-    labourQty: 2, labourCost: 400,
+    housingQty: 1, housingCost: costsConfig.module.housingCost,
+    busbarQty: 17, busbarCost: costsConfig.module.busbarCost,
+    cscQty: 1, cscCost: costsConfig.module.cscCost,
+    connectorsQty: 2, connectorsCost: costsConfig.module.connectorsCost,
+    insulationQty: 1, insulationCost: costsConfig.module.insulationCost,
+    fastenersQty: 1, fastenersCost: costsConfig.module.fastenersCost,
+    cellAdaptorQty: 1, cellAdaptorCost: costsConfig.module.cellAdaptorCost,
+    labourQty: 2, labourCost: costsConfig.module.labourCost,
 };
 
 export interface ModuleLineItem {
@@ -73,21 +75,21 @@ export function calcModule(
 export const PACK_DEFAULTS = {
     modulesPerRack: 20,
     // Qty + Unit Cost pairs
-    rackFrameQty: 1, rackFrameCost: 120000,
-    packMonitorQty: 1, packMonitorCost: 28000,
-    contactorQty: 3, contactorCost: 3500,
-    dcBreakerQty: 1, dcBreakerCost: 6000,
-    dcFuseQty: 1, dcFuseCost: 3000,
-    mountingRailsQty: 1, mountingRailsCost: 3000,
-    rackLabourQty: 1, rackLabourCost: 6000,
+    rackFrameQty: 1, rackFrameCost: costsConfig.pack.rackFrameCost,
+    packMonitorQty: 1, packMonitorCost: costsConfig.pack.packMonitorCost,
+    contactorQty: 3, contactorCost: costsConfig.pack.contactorCost,
+    dcBreakerQty: 1, dcBreakerCost: costsConfig.pack.dcBreakerCost,
+    dcFuseQty: 1, dcFuseCost: costsConfig.pack.dcFuseCost,
+    mountingRailsQty: 1, mountingRailsCost: costsConfig.pack.mountingRailsCost,
+    rackLabourQty: 1, rackLabourCost: costsConfig.pack.rackLabourCost,
     // Cables (length × price/m)
-    cableRedPricePerM: 680,
-    cableBlackPricePerM: 680,
+    cableRedPricePerM: costsConfig.pack.cableRedPricePerM,
+    cableBlackPricePerM: costsConfig.pack.cableBlackPricePerM,
     cableLengthPerRack: 50,         // metres per colour
     // BMS / Daisy chain
-    bmsControllerQty: 1, bmsControllerCost: 10000,
-    daisyChainConverterQty: 1, daisyChainConverterCost: 3000,
-    daisyChainCableCostPerM: 250,
+    bmsControllerQty: 1, bmsControllerCost: costsConfig.pack.bmsControllerCost,
+    daisyChainConverterQty: 1, daisyChainConverterCost: costsConfig.pack.daisyChainConverterCost,
+    daisyChainCableCostPerM: costsConfig.pack.daisyChainCableCostPerM,
     daisyChainCableLengthPerRack: 19,
 };
 
@@ -137,10 +139,10 @@ export function calcPack(
 export const SYSTEM_DEFAULTS = {
     systemMW: 2,
     cRate: 1,
-    masterBMSCost: 200000,
-    bmsHousingCost: 10000,
-    safetySystemsCost: 100000,
-    pcsCost: 200000,           // per MW
+    masterBMSCost: costsConfig.system.masterBMSCost,
+    bmsHousingCost: costsConfig.system.bmsHousingCost,
+    safetySystemsCost: costsConfig.system.safetySystemsCost,
+    pcsCost: costsConfig.system.pcsCost,           // per MW
 };
 
 export function calcSystem(
@@ -204,11 +206,11 @@ export function calcSystem(
 
 // ── Section 5: BOP ─────────────────────────────────────────────
 export const BOP_DEFAULTS = {
-    civilWorks: 1500000,
-    acCabling: 100000,
-    earthing: 500000,
-    installationLabour: 200000,
-    communication: 200000,
+    civilWorks: costsConfig.bop.civilWorks,
+    acCabling: costsConfig.bop.acCabling,
+    earthing: costsConfig.bop.earthing,
+    installationLabour: costsConfig.bop.installationLabour,
+    communication: costsConfig.bop.communication,
 };
 
 export function calcBOP(bop: typeof BOP_DEFAULTS) {

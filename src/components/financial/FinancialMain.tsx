@@ -49,7 +49,7 @@ export default function FinancialMain({
                         <span id="kpi-irr" className="kpi-value">{model ? fmtPct(model.irr) : '—'}</span>
                     </div>
                     <div className="kpi-card kpi-npv">
-                        <span className="kpi-label">NPV @ <span id="kpi-npv-rate">{params ? (params.discountRate * 100).toFixed(0) : '8'}</span>%</span>
+                        <span className="kpi-label">Total Cash Flow (NPV)</span>
                         <span id="kpi-npv" className="kpi-value">{model ? fmtDollar(model.npv, currencySymbol, exchangeRate) : '—'}</span>
                     </div>
                     <div className="kpi-card kpi-payback">

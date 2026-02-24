@@ -8,20 +8,20 @@ import { createContext, useContext, useState, useCallback, ReactNode } from 'rea
    
    This context manages currency conversion across the app:
    
-   1. All values are stored internally in USD
-   2. When user selects a currency (e.g., INR), the exchange
-      rate is fetched from the API (e.g., 1 USD = 90.90 INR)
-   3. Display values = USD value × exchange rate
-   4. When user edits an input, it's converted back to USD
+   1. All values are stored internally in INR
+   2. When user selects a currency (e.g., USD), the exchange
+      rate is fetched from the API (e.g., 1 INR = 0.012 USD)
+   3. Display values = INR value × exchange rate
+   4. When user edits an input, it's converted back to INR
       by dividing by the exchange rate
    
-   Example flow when selecting INR:
-   - User selects INR
-   - API fetches rate: 90.90
-   - CAPEX stored as: $2,750,000 (USD)
-   - CAPEX displayed as: ₹249,22,500 (INR)
-   - User edits to: ₹300,00,000
-   - Stored back as: $3,300,330 (USD)
+   Example flow when selecting USD:
+   - User selects USD
+   - API fetches rate: 0.012
+   - CAPEX stored as: ₹2,50,96,710 (INR)
+   - CAPEX displayed as: $30,237 (USD)
+   - User edits to: $35,000
+   - Stored back as: ₹2,91,66,667 (INR)
    ============================================================ */
 
 
@@ -39,7 +39,7 @@ interface CurrencyProviderProps {
 }
 
 export function CurrencyProvider({ children }: CurrencyProviderProps) {
-    const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+    const [selectedCurrency, setSelectedCurrency] = useState<string>('INR');
     const [exchangeRate, setExchangeRate] = useState<number>(1);
 
     const handleCurrencyChange = useCallback((currency: string) => {

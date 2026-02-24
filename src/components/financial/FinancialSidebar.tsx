@@ -15,11 +15,16 @@ interface NumInputProps {
 }
 
 function NumInput({ id, label, value, unit, onChange, step, min, max, readOnly }: NumInputProps) {
-    const [text, setText] = useState<string>(value != null ? String(value) : '');
+    const formatValue = (v: number) => {
+        if (v == null || isNaN(v)) return '';
+        const rounded = Math.round(v * 100) / 100;
+        return Number.isInteger(rounded) ? String(Math.round(rounded)) : String(rounded);
+    };
+    const [text, setText] = useState<string>(formatValue(value));
     const commitTimerRef = useRef<any>(null);
 
     useEffect(() => {
-        setText(value != null ? String(value) : '');
+        setText(formatValue(value));
     }, [value]);
 
     const commit = () => {
@@ -196,9 +201,8 @@ export default function FinancialSidebar({ inputs, onInputChange, onReset, colla
                         <SliderInput id="inp-debt-rate" label="Interest Rate" value={inputs.debtRate} min={0} max={15} step={0.1} onChange={c('debtRate')} />
                         <NumInput id="inp-loan-term" label="Loan Term" value={inputs.loanTerm} unit="years" step={1} min={1} max={30} onChange={c('loanTerm')} />
 
-                        <h4 className="sub-heading">Tax &amp; Discount</h4>
+                        <h4 className="sub-heading">Tax</h4>
                         <SliderInput id="inp-tax-rate" label="Tax Rate" value={inputs.taxRate} min={0} max={40} step={0.1} onChange={c('taxRate')} />
-                        <SliderInput id="inp-discount-rate" label="Discount Rate" value={inputs.discountRate} min={0} max={20} step={0.1} onChange={c('discountRate')} />
                     </div>
                 </details>
             </div>
