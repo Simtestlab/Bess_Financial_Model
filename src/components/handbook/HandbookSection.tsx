@@ -6,7 +6,7 @@ import { useCurrency } from '@/lib/CurrencyContext';
 import { getCurrencyInfo, getExchangeRate } from '@/lib/currency';
 import { fmtCurrency } from '@/lib/formatters';
 
-const STORAGE_KEY = 'bess-sizing-inputs-v4';
+const STORAGE_KEY = 'bess-sizing-inputs-v5'; // Incremented to clear old USD-based data
 
 function saveInputs(inputs: any) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(inputs)); } catch { }
@@ -145,13 +145,13 @@ export default function HandbookSection() {
 
     const { selectedCurrency } = useCurrency();
     const cInfo = useMemo(() => getCurrencyInfo(selectedCurrency), [selectedCurrency]);
-    const sym = cInfo?.symbol || '$';
+    const sym = cInfo?.symbol || '₹';
     const [bessRate, setBessRate] = useState<number>(1);
 
     useEffect(() => {
-        if (selectedCurrency === 'USD') { setBessRate(1); return; }
+        if (selectedCurrency === 'INR') { setBessRate(1); return; }
         let cancelled = false;
-        getExchangeRate('USD', selectedCurrency)
+        getExchangeRate('INR', selectedCurrency)
             .then(rate => { if (!cancelled) setBessRate(rate); })
             .catch(() => { if (!cancelled) setBessRate(1); });
         return () => { cancelled = true; };
@@ -309,7 +309,7 @@ export default function HandbookSection() {
                                     <tr><td>Master BMS</td><td>{fc(inputs.masterBMSCost)}</td></tr>
                                     <tr><td>BMS Housing</td><td>{fc(inputs.bmsHousingCost)}</td></tr>
                                     <tr><td>Safety Systems</td><td>{fc(inputs.safetySystemsCost)}</td></tr>
-                                    <tr><td>PCS ({inputs.systemMW} MW)</td><td>{o ? fc(o.sysOut.pcsCostTotal) : '--'}</td></tr>
+                                    <tr><td>PCS ({inputs.pcsQty} × {inputs.pcsCapacityKW} kW)</td><td>{o ? fc(o.sysOut.pcsCostTotal) : '--'}</td></tr>
                                     <tr className="t-total"><td>Total Battery System</td><td>{o ? fc(o.sysOut.totalBatterySystemCost) : '--'}</td></tr>
                                 </tbody></table>
                             </>}>
@@ -479,7 +479,21 @@ export default function HandbookSection() {
                         <NumInput id="es-bms" label="Master BMS Cost" value={inputs.masterBMSCost} unit={sym} step={10000} min={0} onChange={c('masterBMSCost')} displayRate={bessRate} />
                         <NumInput id="es-bmsh" label="BMS Housing Cost" value={inputs.bmsHousingCost} unit={sym} step={1000} min={0} onChange={c('bmsHousingCost')} displayRate={bessRate} />
                         <NumInput id="es-safe" label="Safety Systems" value={inputs.safetySystemsCost} unit={sym} step={10000} min={0} onChange={c('safetySystemsCost')} displayRate={bessRate} />
-                        <NumInput id="es-pcs" label="PCS Cost (per MW)" value={inputs.pcsCost} unit={`${sym}/MW`} step={10000} min={0} onChange={c('pcsCost')} displayRate={bessRate} />
+                        
+                        <div className="bess-field">
+                            <label htmlFor="es-pcs-cap">PCS Capacity</label>
+                            <div className="bess-field-row">
+                                <select id="es-pcs-cap" value={inputs.pcsCapacityKW} onChange={e => set('pcsCapacityKW', Number(e.target.value))}>
+                                    <option value={50}>50 kW</option>
+                                    <option value={100}>100 kW</option>
+                                    <option value={150}>150 kW</option>
+                                    <option value={250}>250 kW</option>
+                                    <option value={500}>500 kW</option>
+                                    <option value={630}>630 kW</option>
+                                </select>
+                            </div>
+                        </div>
+                        <NumInput id="es-pcs-qty" label="PCS Quantity" value={inputs.pcsQty} unit="units" step={1} min={0} onChange={c('pcsQty')} />
                     </>}
                     right={<>
                         <div className="live-section"><h4>System Overview</h4>
@@ -497,7 +511,7 @@ export default function HandbookSection() {
                                 <tr><td>Master BMS</td><td>{fc(inputs.masterBMSCost)}</td></tr>
                                 <tr><td>BMS Housing</td><td>{fc(inputs.bmsHousingCost)}</td></tr>
                                 <tr><td>Safety Systems</td><td>{fc(inputs.safetySystemsCost)}</td></tr>
-                                <tr><td>PCS ({inputs.systemMW} MW)</td><td>{o ? fc(o.sysOut.pcsCostTotal) : '--'}</td></tr>
+                                <tr><td>PCS ({inputs.pcsQty} × {inputs.pcsCapacityKW} kW)</td><td>{o ? fc(o.sysOut.pcsCostTotal) : '--'}</td></tr>
                                 <tr className="t-total"><td>Total Battery System</td><td>{o ? fc(o.sysOut.totalBatterySystemCost) : '--'}</td></tr>
                             </tbody></table>
                         </div>

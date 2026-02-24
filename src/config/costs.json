@@ -37,7 +37,15 @@
     "masterBMSCost": 10000,
     "bmsHousingCost": 4000,
     "safetySystemsCost": 50000,
-    "pcsCost": 1000000
+    "pcsCost": 1000000,
+    "pcsOptions": {
+      "50": 300000,
+      "100": 600000,
+      "150": 900000,
+      "250": 1500000,
+      "500": 3000000,
+      "630": 3780000
+    }
   },
   
   "bop": {
