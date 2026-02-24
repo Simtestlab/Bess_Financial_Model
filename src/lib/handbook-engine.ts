@@ -142,8 +142,20 @@ export const SYSTEM_DEFAULTS = {
     masterBMSCost: costsConfig.system.masterBMSCost,
     bmsHousingCost: costsConfig.system.bmsHousingCost,
     safetySystemsCost: costsConfig.system.safetySystemsCost,
-    pcsCost: costsConfig.system.pcsCost,           // per MW
+    pcsCapacityKW: 50,          // PCS capacity in kW (dropdown: 50, 100, 150, 250, 500, 630)
+    pcsQty: 1,                  // Number of PCS units
+    pcsCost: costsConfig.system.pcsCost,           // Legacy field for financial model compatibility
 };
+
+// PCS capacity options with unit costs from config
+export const PCS_OPTIONS = [
+    { kw: 50, cost: costsConfig.system.pcsOptions['50'] },
+    { kw: 100, cost: costsConfig.system.pcsOptions['100'] },
+    { kw: 150, cost: costsConfig.system.pcsOptions['150'] },
+    { kw: 250, cost: costsConfig.system.pcsOptions['250'] },
+    { kw: 500, cost: costsConfig.system.pcsOptions['500'] },
+    { kw: 630, cost: costsConfig.system.pcsOptions['630'] },
+];
 
 export function calcSystem(
     cell: typeof CELL_DEFAULTS,
@@ -164,7 +176,11 @@ export function calcSystem(
     const deliveredACEnergy = totalDCEnergy * cell.dod * cell.efficiency;
 
     const totalRacksCost = numberOfRacks * packOut.totalRackCost;
-    const pcsCostTotal = sys.pcsCost * sys.systemMW;
+    
+    // PCS cost calculation: qty × unit cost based on selected capacity
+    const pcsUnitCost = (costsConfig.system.pcsOptions as any)[String(sys.pcsCapacityKW)] || 0;
+    const pcsCostTotal = sys.pcsQty * pcsUnitCost;
+    
     const totalBatterySystemCost =
         totalRacksCost + sys.masterBMSCost + sys.bmsHousingCost + sys.safetySystemsCost + pcsCostTotal;
 
@@ -286,6 +302,8 @@ export function calculateAll(inp: typeof ALL_DEFAULTS) {
         masterBMSCost: inp.masterBMSCost,
         bmsHousingCost: inp.bmsHousingCost,
         safetySystemsCost: inp.safetySystemsCost,
+        pcsCapacityKW: inp.pcsCapacityKW,
+        pcsQty: inp.pcsQty,
         pcsCost: inp.pcsCost,
     };
     const bop: typeof BOP_DEFAULTS = {
