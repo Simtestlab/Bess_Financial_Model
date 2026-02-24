@@ -1,8 +1,9 @@
 'use client';
 
+import { memo } from 'react';
 import { fmtDollar, fmtMWh } from '@/lib/formatters';
 
-export default function IncomeTable({ model, currencySymbol = '$', exchangeRate = 1 }) {
+function IncomeTable({ model, currencySymbol = '$', exchangeRate = 1 }: any) {
     const displayN = Math.min(model.N, 10);
 
     const rows = [
@@ -69,3 +70,5 @@ export default function IncomeTable({ model, currencySymbol = '$', exchangeRate 
         </div>
     );
 }
+
+export default memo(IncomeTable);

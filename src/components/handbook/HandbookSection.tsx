@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, memo } from 'react';
 import { ALL_DEFAULTS, calculateAll } from '@/lib/handbook-engine';
 import { useCurrency } from '@/lib/CurrencyContext';
-import { getCurrencyInfo } from '@/lib/currency';
+import { getCurrencyInfo, getExchangeRate } from '@/lib/currency';
 import { fmtCurrency } from '@/lib/formatters';
 
 const STORAGE_KEY = 'bess-sizing-inputs-v4';
@@ -25,7 +25,7 @@ function fmtInt(n: number | null | undefined): string {
 }
 
 /* ── NumInput ───────────────────────────────────────────────── */
-function NumInput({ id, label, value, unit, onChange, step, min, max, displayRate }:
+const NumInput = memo(function NumInput({ id, label, value, unit, onChange, step, min, max, displayRate }:
     { id: string; label: string; value: number; unit: string; onChange: (v: number) => void; step?: number; min?: number; max?: number; displayRate?: number }) {
     const r = displayRate || 1;
     const formatValue = useCallback((v: number) => {
@@ -35,6 +35,7 @@ function NumInput({ id, label, value, unit, onChange, step, min, max, displayRat
     const [text, setText] = useState(formatValue(value));
     const timer = useRef<any>(null);
     useEffect(() => { setText(formatValue(value)); }, [value, formatValue]);
+    useEffect(() => () => clearTimeout(timer.current), []);
     const commit = () => { const p = parseFloat(text); if (!isNaN(p)) onChange(p / r); else { onChange(0); setText('0'); } };
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const t = e.target.value; setText(t); clearTimeout(timer.current);
@@ -52,10 +53,10 @@ function NumInput({ id, label, value, unit, onChange, step, min, max, displayRat
             </div>
         </div>
     );
-}
+});
 
 /* ── CellInput ──────────────────────────────────────────────── */
-function CellInput({ value, onChange, step, min, displayRate }:
+const CellInput = memo(function CellInput({ value, onChange, step, min, displayRate }:
     { value: number; onChange: (v: number) => void; step?: number; min?: number; displayRate?: number }) {
     const r = displayRate || 1;
     const formatValue = useCallback((v: number) => {
@@ -65,6 +66,7 @@ function CellInput({ value, onChange, step, min, displayRate }:
     const [text, setText] = useState(formatValue(value));
     const timer = useRef<any>(null);
     useEffect(() => { setText(formatValue(value)); }, [value, formatValue]);
+    useEffect(() => () => clearTimeout(timer.current), []);
     const commit = () => { const p = parseFloat(text); if (!isNaN(p)) onChange(p / r); else { onChange(0); setText('0'); } };
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const t = e.target.value; setText(t); clearTimeout(timer.current);
@@ -76,20 +78,20 @@ function CellInput({ value, onChange, step, min, displayRate }:
             onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
             onWheel={e => (e.target as HTMLInputElement).blur()} />
     );
-}
+});
 
 /* ── Metric Row ─────────────────────────────────────────────── */
-function MRow({ label, value, cls, total }: { label: string; value: string; cls?: string; total?: boolean }) {
+const MRow = memo(function MRow({ label, value, cls, total }: { label: string; value: string; cls?: string; total?: boolean }) {
     return (
         <div className={`metric-row${total ? ' total' : ''}`}>
             <span className="metric-label">{label}</span>
             <span className={`metric-val ${cls || ''}`}>{value}</span>
         </div>
     );
-}
+});
 
 /* ── Section Card ───────────────────────────────────────────── */
-function SCard({ title, children, detail, onEdit }:
+const SCard = memo(function SCard({ title, children, detail, onEdit }:
     { title: string; children: React.ReactNode; detail?: React.ReactNode; onEdit?: () => void }) {
     const [open, setOpen] = useState(false);
     return (
@@ -106,10 +108,10 @@ function SCard({ title, children, detail, onEdit }:
             {detail && <div className={`s-expand${open ? ' open' : ''}`}><div className="s-expand-inner">{detail}</div></div>}
         </div>
     );
-}
+});
 
 /* ── Edit Modal ─────────────────────────────────────────────── */
-function EditModal({ title, left, right, onClose }:
+const EditModal = memo(function EditModal({ title, left, right, onClose }:
     { title: string; left: React.ReactNode; right: React.ReactNode; onClose: () => void }) {
     useEffect(() => {
         const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -129,7 +131,7 @@ function EditModal({ title, left, right, onClose }:
             </div>
         </div>
     );
-}
+});
 
 /* ══════════════════════════════════════════════════════════════
    MAIN COMPONENT
@@ -138,41 +140,60 @@ export default function HandbookSection() {
     const [inputs, setInputs] = useState({ ...ALL_DEFAULTS });
     const [outputs, setOutputs] = useState<ReturnType<typeof calculateAll> | null>(null);
     const [editSection, setEditSection] = useState<string | null>(null);
-    const timerRef = useRef<any>(null);
+    const recalcTimerRef = useRef<any>(null);
+    const inputsRef = useRef(inputs);
 
     const { selectedCurrency } = useCurrency();
-    const cInfo = getCurrencyInfo(selectedCurrency);
+    const cInfo = useMemo(() => getCurrencyInfo(selectedCurrency), [selectedCurrency]);
     const sym = cInfo?.symbol || '$';
     const [bessRate, setBessRate] = useState<number>(1);
+
     useEffect(() => {
         if (selectedCurrency === 'USD') { setBessRate(1); return; }
         let cancelled = false;
-        (async () => {
-            try { const { getExchangeRate } = await import('@/lib/currency'); const rate = await getExchangeRate('USD', selectedCurrency); if (!cancelled) setBessRate(rate); }
-            catch { if (!cancelled) setBessRate(1); }
-        })();
+        getExchangeRate('USD', selectedCurrency)
+            .then(rate => { if (!cancelled) setBessRate(rate); })
+            .catch(() => { if (!cancelled) setBessRate(1); });
         return () => { cancelled = true; };
     }, [selectedCurrency]);
-    const fc = (v: number) => fmtCurrency(v, sym, bessRate);
+
+    const fc = useCallback((v: number) => fmtCurrency(v, sym, bessRate), [sym, bessRate]);
 
     useEffect(() => {
         const saved = loadInputs();
         const merged = saved ? { ...ALL_DEFAULTS, ...saved } : { ...ALL_DEFAULTS };
-        setInputs(merged); setOutputs(calculateAll(merged));
+        setInputs(merged);
+        inputsRef.current = merged;
+        setOutputs(calculateAll(merged));
     }, []);
 
-    const recalc = useCallback((cur: typeof ALL_DEFAULTS) => { saveInputs(cur); setOutputs(calculateAll(cur)); }, []);
+    // Cleanup timer on unmount
+    useEffect(() => () => clearTimeout(recalcTimerRef.current), []);
+
+    const recalc = useCallback((cur: typeof ALL_DEFAULTS) => {
+        saveInputs(cur);
+        setOutputs(calculateAll(cur));
+    }, []);
+
     const set = useCallback((key: string, val: number | string) => {
         setInputs(prev => {
             const next = { ...prev, [key]: val };
-            clearTimeout(timerRef.current);
-            timerRef.current = setTimeout(() => recalc(next as any), 30);
+            inputsRef.current = next;
+            // Debounced recalculation using ref to avoid stale closures
+            clearTimeout(recalcTimerRef.current);
+            recalcTimerRef.current = setTimeout(() => recalc(inputsRef.current as any), 120);
             return next;
         });
     }, [recalc]);
-    const c = (key: string) => (val: number) => set(key, val);
+
+    const c = useCallback((key: string) => (val: number) => set(key, val), [set]);
+
     const handleReset = useCallback(() => {
-        const d = { ...ALL_DEFAULTS }; setInputs(d); localStorage.removeItem(STORAGE_KEY); recalc(d);
+        const d = { ...ALL_DEFAULTS };
+        setInputs(d);
+        inputsRef.current = d;
+        localStorage.removeItem(STORAGE_KEY);
+        recalc(d);
     }, [recalc]);
 
     const o = outputs;

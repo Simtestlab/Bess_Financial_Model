@@ -1,25 +1,24 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { fmtDollar, fmtPct } from '@/lib/formatters';
 import {
     runModel,
     runSensitivity,
     runDegradationSensitivity,
     runEfficiencySensitivity,
-    runTornadoSensitivity,
 } from '@/lib/engine';
 import TornadoChart from './TornadoChart';
 
-export default function SensitivityPanel({ params, currencySymbol = '$', exchangeRate = 1 }) {
-    const spreadLabels = ['-20%', 'Base', '+20%'];
-    const spreadMults = [0.8, 1.0, 1.2];
-    const capexLabels = ['-20%', 'Base', '+20%'];
-    const effLabels = ['-5%', 'Base', '+5%'];
+const SPREAD_LABELS = ['-20%', 'Base', '+20%'];
+const SPREAD_MULTS = [0.8, 1.0, 1.2];
+const CAPEX_LABELS = ['-20%', 'Base', '+20%'];
+const EFF_LABELS = ['-5%', 'Base', '+5%'];
 
+function SensitivityPanel({ params, currencySymbol = '$', exchangeRate = 1 }: any) {
     // Spread sensitivity
     const spreadResults = useMemo(() => {
-        return spreadMults.map((m) => {
+        return SPREAD_MULTS.map((m) => {
             const p = { ...params, dischargePrice: params.dischargePrice * m };
             const spread = p.dischargePrice - p.chargePrice;
             const model = runModel(p);
@@ -54,7 +53,7 @@ export default function SensitivityPanel({ params, currencySymbol = '$', exchang
                         <tbody id="sens-spread-body">
                             {spreadResults.map((r, i) => (
                                 <tr key={i} className={i === 1 ? 'base-row' : ''}>
-                                    <td>{spreadLabels[i]}</td>
+                                    <td>{SPREAD_LABELS[i]}</td>
                                     <td>${r.spread.toFixed(0)}/MWh</td>
                                     <td>{fmtPct(r.model.irr)}</td>
                                     <td>{fmtDollar(r.model.npv, currencySymbol, exchangeRate)}</td>
@@ -74,7 +73,7 @@ export default function SensitivityPanel({ params, currencySymbol = '$', exchang
                         <tbody id="sens-capex-body">
                             {capexResults.map((r, i) => (
                                 <tr key={i} className={i === 1 ? 'base-row' : ''}>
-                                    <td>{capexLabels[i]}</td>
+                                    <td>{CAPEX_LABELS[i]}</td>
                                     <td>{fmtDollar(r.value, currencySymbol, exchangeRate)}</td>
                                     <td>{fmtPct(r.model.irr)}</td>
                                     <td>{fmtDollar(r.model.npv, currencySymbol, exchangeRate)}</td>
@@ -94,7 +93,7 @@ export default function SensitivityPanel({ params, currencySymbol = '$', exchang
                         <tbody id="sens-eff-body">
                             {effResults.map((r, i) => (
                                 <tr key={i} className={i === 1 ? 'base-row' : ''}>
-                                    <td>{effLabels[i]}</td>
+                                    <td>{EFF_LABELS[i]}</td>
                                     <td>{(r.efficiency * 100).toFixed(1)}%</td>
                                     <td>{fmtDollar(r.yr1Revenue, currencySymbol, exchangeRate)}</td>
                                     <td>{fmtPct(r.model.irr)}</td>
@@ -134,3 +133,5 @@ export default function SensitivityPanel({ params, currencySymbol = '$', exchang
         </>
     );
 }
+
+export default memo(SensitivityPanel);

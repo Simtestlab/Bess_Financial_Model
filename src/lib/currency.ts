@@ -37,38 +37,77 @@ export const CURRENCY_OPTIONS: CurrencyOption[] = [
     { code: 'IDR', country: 'Indonesia', symbol: 'Rp' },
 ];
 
+// ── Rate cache (avoids redundant API calls within same session) ──
+const rateCache = new Map<string, { rate: number; timestamp: number }>();
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+// In-flight request deduplication
+const inflightRequests = new Map<string, Promise<number>>();
+
 /**
- * Fetch exchange rate from the given base currency to target currency
+ * Fetch exchange rate from the given base currency to target currency.
+ * Cached for 10 minutes and deduplicates concurrent requests.
  */
 export async function getExchangeRate(baseCurrency: string, targetCurrency: string): Promise<number> {
     if (baseCurrency === targetCurrency) {
         return 1;
     }
 
-    try {
-        const url = `${API_BASE}/${API_KEY}/latest/${baseCurrency}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-        }
+    const cacheKey = `${baseCurrency}:${targetCurrency}`;
 
-        const data: ExchangeRateResponse = await response.json();
-        
-        if (data.result === 'error') {
-            throw new Error(data['error-type']);
-        }
-
-        const rate = data.conversion_rates[targetCurrency];
-        if (!rate) {
-            throw new Error(`Currency ${targetCurrency} not found`);
-        }
-
-        return rate;
-    } catch (error) {
-        console.error('Failed to fetch exchange rate:', error);
-        return 1; // Fallback to 1:1 if API fails
+    // Check cache
+    const cached = rateCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return cached.rate;
     }
+
+    // Deduplicate in-flight requests
+    const inflight = inflightRequests.get(cacheKey);
+    if (inflight) {
+        return inflight;
+    }
+
+    const fetchPromise = (async () => {
+        try {
+            const url = `${API_BASE}/${API_KEY}/latest/${baseCurrency}`;
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+
+            const data: ExchangeRateResponse = await response.json();
+
+            if (data.result === 'error') {
+                throw new Error(data['error-type']);
+            }
+
+            const rate = data.conversion_rates[targetCurrency];
+            if (!rate) {
+                throw new Error(`Currency ${targetCurrency} not found`);
+            }
+
+            // Cache the result
+            rateCache.set(cacheKey, { rate, timestamp: Date.now() });
+
+            // Also cache all other rates from this response
+            for (const [code, r] of Object.entries(data.conversion_rates)) {
+                if (code !== baseCurrency) {
+                    rateCache.set(`${baseCurrency}:${code}`, { rate: r, timestamp: Date.now() });
+                }
+            }
+
+            return rate;
+        } catch (error) {
+            console.error('Failed to fetch exchange rate:', error);
+            return 1; // Fallback to 1:1 if API fails
+        } finally {
+            inflightRequests.delete(cacheKey);
+        }
+    })();
+
+    inflightRequests.set(cacheKey, fetchPromise);
+    return fetchPromise;
 }
 
 /**

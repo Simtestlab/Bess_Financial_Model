@@ -1,25 +1,20 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import FinancialSidebar from './FinancialSidebar';
 import FinancialMain from './FinancialMain';
 import { DEFAULTS, buildParams, runModel } from '@/lib/engine';
 import { useCurrency } from '@/lib/CurrencyContext';
 import { getCurrencyInfo } from '@/lib/currency';
-import {
-    runSensitivity,
-    runDegradationSensitivity,
-    runEfficiencySensitivity,
-    runTornadoSensitivity,
-} from '@/lib/engine';
 
 export default function FinancialSection() {
     const [inputs, setInputs] = useState({ ...DEFAULTS });
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const { selectedCurrency, exchangeRate } = useCurrency();
-    const recalcTimerRef = useRef(null);
-    const [model, setModel] = useState(null);
-    const [params, setParams] = useState(null);
+    const recalcTimerRef = useRef<any>(null);
+    const inputsRef = useRef(inputs);
+    const [model, setModel] = useState<any>(null);
+    const [params, setParams] = useState<any>(null);
 
     // Responsive: collapse sidebar on small screens
     useEffect(() => {
@@ -28,7 +23,7 @@ export default function FinancialSection() {
         }
     }, []);
 
-    const recalculate = useCallback((currentInputs) => {
+    const recalculate = useCallback((currentInputs: any) => {
         const p = buildParams(currentInputs);
         const m = runModel(p);
         setParams(p);
@@ -40,12 +35,16 @@ export default function FinancialSection() {
         recalculate(inputs);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const handleInputChange = useCallback((key, value) => {
+    // Cleanup timer on unmount
+    useEffect(() => () => clearTimeout(recalcTimerRef.current), []);
+
+    const handleInputChange = useCallback((key: string, value: number) => {
         setInputs(prev => {
             const next = { ...prev, [key]: value };
-            // Debounced recalculation
+            inputsRef.current = next;
+            // Debounced recalculation using ref to avoid stale closures
             clearTimeout(recalcTimerRef.current);
-            recalcTimerRef.current = setTimeout(() => recalculate(next), 30);
+            recalcTimerRef.current = setTimeout(() => recalculate(inputsRef.current), 120);
             return next;
         });
     }, [recalculate]);
@@ -53,6 +52,7 @@ export default function FinancialSection() {
     const handleReset = useCallback(() => {
         const defaults = { ...DEFAULTS };
         setInputs(defaults);
+        inputsRef.current = defaults;
         recalculate(defaults);
     }, [recalculate]);
 
@@ -60,8 +60,11 @@ export default function FinancialSection() {
         setSidebarCollapsed(prev => !prev);
     }, []);
 
-    const currencyInfo = getCurrencyInfo(selectedCurrency);
+    const currencyInfo = useMemo(() => getCurrencyInfo(selectedCurrency), [selectedCurrency]);
     const currencySymbol = currencyInfo?.symbol || '$';
+
+    // Memoize ppaVolume to avoid recalculating on every render
+    const ppaVolume = useMemo(() => params ? params.ppaVolume : 0, [params]);
 
     return (
         <>
@@ -70,7 +73,7 @@ export default function FinancialSection() {
                 onInputChange={handleInputChange}
                 onReset={handleReset}
                 collapsed={sidebarCollapsed}
-                ppaVolume={params ? params.ppaVolume : 0}
+                ppaVolume={ppaVolume}
                 currencySymbol={currencySymbol}
                 exchangeRate={exchangeRate}
             />
