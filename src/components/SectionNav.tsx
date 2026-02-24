@@ -1,10 +1,14 @@
 'use client';
 
+import { memo, useCallback } from 'react';
 import { useCurrency } from '@/lib/CurrencyContext';
 import CurrencyConverter from '@/components/CurrencyConverter';
 
-export default function SectionNav({ activeSection, setActiveSection }) {
+function SectionNav({ activeSection, setActiveSection }: any) {
     const { selectedCurrency, exchangeRate, onCurrencyChange, onRateChange } = useCurrency();
+
+    const goHandbook = useCallback(() => setActiveSection('section-handbook'), [setActiveSection]);
+    const goFinancial = useCallback(() => setActiveSection('section-financial'), [setActiveSection]);
 
     return (
         <nav id="section-nav" className="section-nav">
@@ -20,7 +24,7 @@ export default function SectionNav({ activeSection, setActiveSection }) {
                 <div className="section-tabs" role="tablist">
                     <button
                         className={`section-tab ${activeSection === 'section-handbook' ? 'active' : ''}`}
-                        onClick={() => setActiveSection('section-handbook')}
+                        onClick={goHandbook}
                         role="tab"
                         aria-selected={activeSection === 'section-handbook'}
                         id="section-tab-handbook"
@@ -39,7 +43,7 @@ export default function SectionNav({ activeSection, setActiveSection }) {
                     </button>
                     <button
                         className={`section-tab ${activeSection === 'section-financial' ? 'active' : ''}`}
-                        onClick={() => setActiveSection('section-financial')}
+                        onClick={goFinancial}
                         role="tab"
                         aria-selected={activeSection === 'section-financial'}
                         id="section-tab-financial"
@@ -57,7 +61,7 @@ export default function SectionNav({ activeSection, setActiveSection }) {
                     </button>
                 </div>
                 <CurrencyConverter
-                    baseCurrency="USD"
+                    baseCurrency="INR"
                     selectedCurrency={selectedCurrency}
                     exchangeRate={exchangeRate}
                     onCurrencyChange={onCurrencyChange}
@@ -67,3 +71,5 @@ export default function SectionNav({ activeSection, setActiveSection }) {
         </nav>
     );
 }
+
+export default memo(SectionNav);

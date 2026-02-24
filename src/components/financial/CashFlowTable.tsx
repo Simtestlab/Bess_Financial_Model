@@ -1,11 +1,12 @@
 'use client';
 
+import { memo } from 'react';
 import { fmtDollar } from '@/lib/formatters';
 
-export default function CashFlowTable({ model, currencySymbol = '$', exchangeRate = 1 }) {
+function CashFlowTable({ model, currencySymbol = '$', exchangeRate = 1 }: any) {
     const displayN = Math.min(model.N, 10);
 
-    const withY0 = (y0val, arr) => [y0val, ...arr.slice(0, displayN)];
+    const withY0 = (y0val: number, arr: number[]) => [y0val, ...arr.slice(0, displayN)];
 
     const rows = [
         { label: 'Unlevered (Project)', cls: 'row-header', data: null },
@@ -65,3 +66,5 @@ export default function CashFlowTable({ model, currencySymbol = '$', exchangeRat
         </div>
     );
 }
+
+export default memo(CashFlowTable);

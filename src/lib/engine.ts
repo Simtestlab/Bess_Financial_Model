@@ -10,6 +10,8 @@
      • Unlevered & levered cash flows
    ============================================================ */
 
+import costsConfig from '@/config/costs.json';
+
 // ── Run the full financial model ────────────────────────────
 export function runModel(p) {
     const N = p.projectLife;
@@ -255,48 +257,47 @@ export function computePPAVolume(params) {
 
 /* ──────────────────────────────────────────────────────────────
    DEFAULT INPUT VALUES
-   NOTE: All monetary values are stored internally in USD ($)
+   NOTE: All monetary values are stored internally in INR (₹)
    The UI converts these to the selected currency for display
-   Example: 1 USD ≈ 90.90 INR (rates fetched from API)
+   Example: 1 INR ≈ 0.012 USD (rates fetched from API)
    ────────────────────────────────────────────────────────────── */
 export const DEFAULTS = {
     // Technical Parameters
-    capacity: 8.5,              // MWh
+    capacity: 1.8,              // MWh (usable capacity)
     arbDays: 280,               // days
     availability: 98,           // %
     rte: 90,                    // % (Round-trip efficiency)
     
-    // Energy Pricing (USD)
-    chargePrice: 30,            // $/MWh
-    dischargePrice: 75,         // $/MWh
+    // Energy Pricing (INR)
+    chargePrice: costsConfig.financial.chargePrice,            // ₹/MWh
+    dischargePrice: costsConfig.financial.dischargePrice,      // ₹/MWh
     
-    // Revenue Parameters (USD)
+    // Revenue Parameters (INR)
     ppaVol: 3500,               // MWh/yr
-    ppaPrice: 80,               // $/MWh
-    ppaEsc: 3,                  // %
-    ancillary: 120000,          // $/yr
-    otherRev: 50000,            // $/yr
+    ppaPrice: costsConfig.financial.ppaPrice,                  // ₹/MWh
+    ppaEsc: 0,                  // %
+    ancillary: costsConfig.financial.ancillary,                // ₹/yr
+    otherRev: costsConfig.financial.otherRev,                  // ₹/yr
     
-    // Cost & Investment (USD)
-    capex: 2750000,             // $ (Total CAPEX)
-    insurance: 0.5,             // %
-    varOm: 5,                   // %
-    fixedOm: 299000,            // $/yr
-    inflation: 2,               // %
-    adminCost: 20000,           // $/yr
-    preventiveMaintenance: 30000, // $/yr
-    projectLife: 25,            // years
-    degradation: 2.5,           // %
-    cyclesPerDay: 1.5,          // cycles/day
+    // Cost & Investment (INR)
+    capex: costsConfig.financial.capex,                        // ₹ (Total CAPEX - can import from BESS Sizing)
+    insurance: 1.0,             // %
+    varOm: 1.0,                 // %
+    fixedOm: costsConfig.financial.fixedOm,                    // ₹/yr
+    inflation: 3.0,             // %
+    adminCost: costsConfig.financial.adminCost,                // ₹/yr
+    preventiveMaintenance: costsConfig.financial.preventiveMaintenance, // ₹/yr
+    projectLife: 10,            // years
+    degradation: 3.0,           // %
+    cyclesPerDay: 1,            // cycles/day
     
-    // Debt Financing (USD)
-    debtAmount: 1500000,        // $
+    // Debt Financing (INR)
+    debtAmount: costsConfig.financial.debtAmount,              // ₹
     debtRate: 5,                // %
     loanTerm: 10,               // years
     
-    // Tax & Discount
-    taxRate: 25,                // %
-    discountRate: 8,            // %
+    // Tax
+    taxRate: 30,                // %
 };
 
 export function buildParams(inputs: any): any {
@@ -321,7 +322,7 @@ export function buildParams(inputs: any): any {
         inflationRate: inputs.inflation / 100,
         projectLife: Math.max(5, Math.round(inputs.projectLife)),
         taxRate: inputs.taxRate / 100,
-        discountRate: inputs.discountRate / 100,
+        discountRate: 0,  // Discount rate removed - NPV shows undiscounted total cash flow
         debtAmount: inputs.debtAmount,
         debtRate: inputs.debtRate / 100,
         loanTerm: Math.max(1, Math.round(inputs.loanTerm)),

@@ -1,10 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, lazy, Suspense, memo } from 'react';
 import { CurrencyProvider } from '@/lib/CurrencyContext';
 import SectionNav from '@/components/SectionNav';
-import FinancialSection from '@/components/financial/FinancialSection';
-import HandbookSection from '@/components/handbook/HandbookSection';
+
+// Lazy-load heavy sections so the inactive one doesn't mount immediately
+const HandbookSection = lazy(() => import('@/components/handbook/HandbookSection'));
+const FinancialSection = lazy(() => import('@/components/financial/FinancialSection'));
+
+const SectionFallback = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: '#94a3b8' }}>
+    <span>Loading…</span>
+  </div>
+);
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState('section-handbook');
@@ -12,18 +20,22 @@ export default function Home() {
   return (
     <CurrencyProvider>
       <SectionNav activeSection={activeSection} setActiveSection={setActiveSection} />
-      <div
-        id="section-handbook"
-        className={`section-panel ${activeSection === 'section-handbook' ? 'active' : ''}`}
-      >
-        <HandbookSection />
-      </div>
-      <div
-        id="section-financial"
-        className={`section-panel ${activeSection === 'section-financial' ? 'active' : ''}`}
-      >
-        <FinancialSection />
-      </div>
+      {/* Only render the active section — prevents the hidden section
+          from mounting, running useEffects, and burning CPU */}
+      {activeSection === 'section-handbook' && (
+        <div id="section-handbook" className="section-panel active">
+          <Suspense fallback={<SectionFallback />}>
+            <HandbookSection />
+          </Suspense>
+        </div>
+      )}
+      {activeSection === 'section-financial' && (
+        <div id="section-financial" className="section-panel active">
+          <Suspense fallback={<SectionFallback />}>
+            <FinancialSection />
+          </Suspense>
+        </div>
+      )}
     </CurrencyProvider>
   );
 }

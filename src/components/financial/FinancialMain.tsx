@@ -1,38 +1,45 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, memo, lazy, Suspense } from 'react';
 import { fmtDollar, fmtPct, fmtYears } from '@/lib/formatters';
 import { exportCSV } from '@/lib/csv-export';
-import { buildParams, runModel } from '@/lib/engine';
-import IncomeTable from './IncomeTable';
-import CashFlowTable from './CashFlowTable';
-import SensitivityPanel from './SensitivityPanel';
-import ChartsPanel from './ChartsPanel';
 
-export default function FinancialMain({ 
-    model, 
-    params, 
-    inputs, 
-    collapsed, 
+// Lazy-load heavy tab panels so they only mount when needed
+const IncomeTable = lazy(() => import('./IncomeTable'));
+const CashFlowTable = lazy(() => import('./CashFlowTable'));
+const SensitivityPanel = lazy(() => import('./SensitivityPanel'));
+const ChartsPanel = lazy(() => import('./ChartsPanel'));
+
+const TABS = [
+    { id: 'tab-income', label: 'Income Statement' },
+    { id: 'tab-cashflow', label: 'Cash Flow' },
+    { id: 'tab-sensitivity', label: 'Sensitivity' },
+    { id: 'tab-charts', label: 'Charts' },
+] as const;
+
+const TabFallback = () => (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem', color: '#94a3b8' }}>
+        Loading…
+    </div>
+);
+
+function FinancialMain({
+    model,
+    params,
+    inputs,
+    collapsed,
     onToggleSidebar,
     selectedCurrency,
     exchangeRate,
     currencySymbol
-}) {
+}: any) {
     const [activeTab, setActiveTab] = useState('tab-income');
 
-    const tabs = [
-        { id: 'tab-income', label: 'Income Statement' },
-        { id: 'tab-cashflow', label: 'Cash Flow' },
-        { id: 'tab-sensitivity', label: 'Sensitivity' },
-        { id: 'tab-charts', label: 'Charts' },
-    ];
-
-    const handleExport = () => {
+    const handleExport = useCallback(() => {
         if (model) {
             exportCSV(model);
         }
-    };
+    }, [model]);
 
     return (
         <main id="main-content" className={`main-content ${collapsed ? 'expanded' : ''}`}>
@@ -49,7 +56,7 @@ export default function FinancialMain({
                         <span id="kpi-irr" className="kpi-value">{model ? fmtPct(model.irr) : '—'}</span>
                     </div>
                     <div className="kpi-card kpi-npv">
-                        <span className="kpi-label">NPV @ <span id="kpi-npv-rate">{params ? (params.discountRate * 100).toFixed(0) : '8'}</span>%</span>
+                        <span className="kpi-label">Total Cash Flow (NPV)</span>
                         <span id="kpi-npv" className="kpi-value">{model ? fmtDollar(model.npv, currencySymbol, exchangeRate) : '—'}</span>
                     </div>
                     <div className="kpi-card kpi-payback">
@@ -71,7 +78,7 @@ export default function FinancialMain({
 
             {/* Tabs */}
             <nav className="tab-nav" role="tablist">
-                {tabs.map(tab => (
+                {TABS.map(tab => (
                     <button
                         key={tab.id}
                         className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
@@ -85,28 +92,54 @@ export default function FinancialMain({
                 ))}
             </nav>
 
-            {/* Tab panels */}
+            {/* Tab panels — only render the active one */}
             <div className="tab-panels">
-                <section id="tab-income" className={`tab-panel ${activeTab === 'tab-income' ? 'active' : ''}`} role="tabpanel">
-                    <h2>Income Statement <span className="subtitle">Projected Annual P&amp;L</span></h2>
-                    {model && <IncomeTable model={model} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />}
-                </section>
+                {activeTab === 'tab-income' && (
+                    <section id="tab-income" className="tab-panel active" role="tabpanel">
+                        <h2>Income Statement <span className="subtitle">Projected Annual P&amp;L</span></h2>
+                        {model && (
+                            <Suspense fallback={<TabFallback />}>
+                                <IncomeTable model={model} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />
+                            </Suspense>
+                        )}
+                    </section>
+                )}
 
-                <section id="tab-cashflow" className={`tab-panel ${activeTab === 'tab-cashflow' ? 'active' : ''}`} role="tabpanel">
-                    <h2>Cash Flow Statement <span className="subtitle">Project &amp; Equity Cash Flows</span></h2>
-                    {model && <CashFlowTable model={model} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />}
-                </section>
+                {activeTab === 'tab-cashflow' && (
+                    <section id="tab-cashflow" className="tab-panel active" role="tabpanel">
+                        <h2>Cash Flow Statement <span className="subtitle">Project &amp; Equity Cash Flows</span></h2>
+                        {model && (
+                            <Suspense fallback={<TabFallback />}>
+                                <CashFlowTable model={model} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />
+                            </Suspense>
+                        )}
+                    </section>
+                )}
 
-                <section id="tab-sensitivity" className={`tab-panel ${activeTab === 'tab-sensitivity' ? 'active' : ''}`} role="tabpanel">
-                    <h2>Sensitivity Analysis <span className="subtitle">Impact on Key Metrics</span></h2>
-                    {params && <SensitivityPanel params={params} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />}
-                </section>
+                {activeTab === 'tab-sensitivity' && (
+                    <section id="tab-sensitivity" className="tab-panel active" role="tabpanel">
+                        <h2>Sensitivity Analysis <span className="subtitle">Impact on Key Metrics</span></h2>
+                        {params && (
+                            <Suspense fallback={<TabFallback />}>
+                                <SensitivityPanel params={params} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />
+                            </Suspense>
+                        )}
+                    </section>
+                )}
 
-                <section id="tab-charts" className={`tab-panel ${activeTab === 'tab-charts' ? 'active' : ''}`} role="tabpanel">
-                    <h2>Financial Charts <span className="subtitle">Visual Analytics</span></h2>
-                    {model && <ChartsPanel model={model} params={params} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />}
-                </section>
+                {activeTab === 'tab-charts' && (
+                    <section id="tab-charts" className="tab-panel active" role="tabpanel">
+                        <h2>Financial Charts <span className="subtitle">Visual Analytics</span></h2>
+                        {model && (
+                            <Suspense fallback={<TabFallback />}>
+                                <ChartsPanel model={model} params={params} currencySymbol={currencySymbol} exchangeRate={exchangeRate} />
+                            </Suspense>
+                        )}
+                    </section>
+                )}
             </div>
         </main>
     );
 }
+
+export default memo(FinancialMain);

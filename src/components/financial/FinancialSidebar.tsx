@@ -1,6 +1,6 @@
- 'use client';
+'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 
 interface NumInputProps {
     id: string;
@@ -14,13 +14,21 @@ interface NumInputProps {
     readOnly?: boolean;
 }
 
-function NumInput({ id, label, value, unit, onChange, step, min, max, readOnly }: NumInputProps) {
-    const [text, setText] = useState<string>(value != null ? String(value) : '');
+const NumInput = memo(function NumInput({ id, label, value, unit, onChange, step, min, max, readOnly }: NumInputProps) {
+    const formatValue = (v: number) => {
+        if (v == null || isNaN(v)) return '';
+        const rounded = Math.round(v * 100) / 100;
+        return Number.isInteger(rounded) ? String(Math.round(rounded)) : String(rounded);
+    };
+    const [text, setText] = useState<string>(formatValue(value));
     const commitTimerRef = useRef<any>(null);
 
     useEffect(() => {
-        setText(value != null ? String(value) : '');
+        setText(formatValue(value));
     }, [value]);
+
+    // Cleanup timer on unmount
+    useEffect(() => () => clearTimeout(commitTimerRef.current), []);
 
     const commit = () => {
         const parsed = parseFloat(text);
@@ -37,7 +45,7 @@ function NumInput({ id, label, value, unit, onChange, step, min, max, readOnly }
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newText = e.target.value;
         setText(newText);
-        
+
         // Auto-commit valid numbers after 300ms of no typing
         clearTimeout(commitTimerRef.current);
         const parsed = parseFloat(newText);
@@ -69,7 +77,7 @@ function NumInput({ id, label, value, unit, onChange, step, min, max, readOnly }
             </div>
         </div>
     );
-}
+});
 
 interface SliderInputProps {
     id: string;
@@ -81,7 +89,7 @@ interface SliderInputProps {
     step?: number;
 }
 
-function SliderInput({ id, label, value, onChange, min, max, step }: SliderInputProps) {
+const SliderInput = memo(function SliderInput({ id, label, value, onChange, min, max, step }: SliderInputProps) {
     return (
         <div className="param">
             <label htmlFor={id}>{label}</label>
@@ -99,7 +107,7 @@ function SliderInput({ id, label, value, onChange, min, max, step }: SliderInput
             </div>
         </div>
     );
-}
+});
 
 interface FinancialSidebarProps {
     inputs: any;
@@ -111,12 +119,12 @@ interface FinancialSidebarProps {
     exchangeRate: number;
 }
 
-export default function FinancialSidebar({ inputs, onInputChange, onReset, collapsed, ppaVolume, currencySymbol, exchangeRate }: FinancialSidebarProps) {
-    // Regular callback for non-currency fields
-    const c = (key) => (val) => onInputChange(key, val);
-    
+function FinancialSidebar({ inputs, onInputChange, onReset, collapsed, ppaVolume, currencySymbol, exchangeRate }: FinancialSidebarProps) {
+    // Stable callback factories that don't recreate every render
+    const c = useCallback((key: string) => (val: number) => onInputChange(key, val), [onInputChange]);
+
     // Currency callback: convert from selected currency back to USD before storing
-    const cc = (key) => (val) => onInputChange(key, val / exchangeRate);
+    const cc = useCallback((key: string) => (val: number) => onInputChange(key, val / exchangeRate), [onInputChange, exchangeRate]);
 
     return (
         <aside id="sidebar" className={`sidebar ${collapsed ? 'collapsed' : ''} ${!collapsed ? 'open' : ''}`}>
@@ -196,12 +204,13 @@ export default function FinancialSidebar({ inputs, onInputChange, onReset, colla
                         <SliderInput id="inp-debt-rate" label="Interest Rate" value={inputs.debtRate} min={0} max={15} step={0.1} onChange={c('debtRate')} />
                         <NumInput id="inp-loan-term" label="Loan Term" value={inputs.loanTerm} unit="years" step={1} min={1} max={30} onChange={c('loanTerm')} />
 
-                        <h4 className="sub-heading">Tax &amp; Discount</h4>
+                        <h4 className="sub-heading">Tax</h4>
                         <SliderInput id="inp-tax-rate" label="Tax Rate" value={inputs.taxRate} min={0} max={40} step={0.1} onChange={c('taxRate')} />
-                        <SliderInput id="inp-discount-rate" label="Discount Rate" value={inputs.discountRate} min={0} max={20} step={0.1} onChange={c('discountRate')} />
                     </div>
                 </details>
             </div>
         </aside>
     );
 }
+
+export default memo(FinancialSidebar);
