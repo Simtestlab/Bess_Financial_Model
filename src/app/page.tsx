@@ -10,8 +10,9 @@ const HandbookSection = lazy(() => import('@/components/handbook/HandbookSection
 const FinancialSection = lazy(() => import('@/components/financial/FinancialSection'));
 
 const SectionFallback = () => (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: '#94a3b8' }}>
-    <span>Loading…</span>
+  <div className="section-loading">
+    <div className="section-loading-spinner" />
+    <span>Loading section...</span>
   </div>
 );
 

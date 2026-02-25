@@ -17,7 +17,7 @@ export default function FinancialSection() {
     const inputsRef = useRef(inputs);
     const [model, setModel] = useState<any>(null);
     const [params, setParams] = useState<any>(null);
-    const STORAGE_KEY = 'bess-financial-inputs-v1';
+    const STORAGE_KEY = 'bess-financial-inputs-v2';
 
     function saveInputsLocal(next: any) {
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { }

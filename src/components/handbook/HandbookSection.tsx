@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef, useMemo, memo } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, memo, lazy, Suspense } from 'react';
 import { ALL_DEFAULTS, calculateAll } from '@/lib/handbook-engine';
 import { useCurrency } from '@/lib/CurrencyContext';
 import { useSizing } from '@/lib/SizingContext';
 import { getCurrencyInfo, getExchangeRate } from '@/lib/currency';
 import { fmtCurrency } from '@/lib/formatters';
 
-const STORAGE_KEY = 'bess-sizing-inputs-v5'; // Incremented to clear old USD-based data
+const ManualModal = lazy(() => import('./ManualModal'));
+
+const STORAGE_KEY = 'bess-sizing-inputs-v6'; // Incremented to reset cached sizing inputs
 
 function saveInputs(inputs: any) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(inputs)); } catch { }
@@ -141,6 +143,7 @@ export default function HandbookSection() {
     const [inputs, setInputs] = useState({ ...ALL_DEFAULTS });
     const [outputs, setOutputs] = useState<ReturnType<typeof calculateAll> | null>(null);
     const [editSection, setEditSection] = useState<string | null>(null);
+    const [manualOpen, setManualOpen] = useState(false);
     const recalcTimerRef = useRef<any>(null);
     const inputsRef = useRef(inputs);
 
@@ -235,6 +238,10 @@ export default function HandbookSection() {
                         <span className="bess-kpi-val orange">{o ? fc(o.summary.costPerKWh) : '--'}</span>
                     </div>
                     <div className="bess-kpi-actions">
+                        <button className="btn-manual" title="Open Manual" onClick={() => setManualOpen(true)}>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 2h4.5l1.5 1.5L9.5 2H14v12H9.5l-1.5 1.5L6.5 14H2z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /><path d="M8 3.5V14" stroke="currentColor" strokeWidth="1.3" /></svg>
+                            Manual
+                        </button>
                         <button className="btn-reset" title="Reset all" onClick={handleReset}>
                             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 2v5h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M3.05 10A6 6 0 1 0 4.2 4.2L2 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                             Reset
@@ -494,7 +501,7 @@ export default function HandbookSection() {
                         <NumInput id="es-bms" label="Master BMS Cost" value={inputs.masterBMSCost} unit={sym} step={10000} min={0} onChange={c('masterBMSCost')} displayRate={bessRate} />
                         <NumInput id="es-bmsh" label="BMS Housing Cost" value={inputs.bmsHousingCost} unit={sym} step={1000} min={0} onChange={c('bmsHousingCost')} displayRate={bessRate} />
                         <NumInput id="es-safe" label="Safety Systems" value={inputs.safetySystemsCost} unit={sym} step={10000} min={0} onChange={c('safetySystemsCost')} displayRate={bessRate} />
-                        
+
                         <div className="bess-field">
                             <label htmlFor="es-pcs-cap">PCS Capacity</label>
                             <div className="bess-field-row">
@@ -556,6 +563,13 @@ export default function HandbookSection() {
                         </div>
                     }
                 />
+            )}
+
+            {/* ═══ MANUAL MODAL ═══ */}
+            {manualOpen && (
+                <Suspense fallback={null}>
+                    <ManualModal onClose={() => setManualOpen(false)} />
+                </Suspense>
             )}
         </main>
     );
