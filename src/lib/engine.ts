@@ -303,8 +303,8 @@ export const DEFAULTS = {
     cyclesPerDay: 1,            // cycles/day
     
     // Debt Financing (INR)
-    debtAmount: costsConfig.financial.debtAmount,              // ₹
-    debtRate: 5,                // %
+    debtAmount: 24901850,                                      // ₹
+    debtRate: 7,                // %
     loanTerm: 10,               // years
     
     // Tax
