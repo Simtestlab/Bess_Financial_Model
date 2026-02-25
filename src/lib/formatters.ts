@@ -22,12 +22,14 @@
  * @param exchangeRate - Conversion rate from USD to target currency
  */
 export function fmtDollar(val: number | null | undefined, symbol: string = '$', exchangeRate: number = 1): string {
-    if (val == null || isNaN(val)) return '—';
+    if (val == null || isNaN(val)) return '\u2014';
     const convertedVal = val * exchangeRate;
     const abs = Math.abs(convertedVal);
     const sign = convertedVal < 0 ? '-' : '';
+    if (abs >= 1e9) return sign + symbol + (abs / 1e9).toFixed(2) + 'B';
     if (abs >= 1e6) return sign + symbol + (abs / 1e6).toFixed(2) + 'M';
-    return sign + symbol + abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (abs >= 1e5) return sign + symbol + (abs / 1e3).toFixed(1) + 'K';
+    return sign + symbol + abs.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 export function fmtPct(val: number | null | undefined): string {
@@ -52,10 +54,12 @@ export function fmtMWh(val: number | null | undefined): string {
  * @param exchangeRate - Conversion rate from USD to target currency
  */
 export function fmtCurrency(val: number | null | undefined, symbol: string = '$', exchangeRate: number = 1): string {
-    if (val == null || isNaN(val)) return '—';
+    if (val == null || isNaN(val)) return '\u2014';
     const convertedVal = val * exchangeRate;
     const abs = Math.abs(convertedVal);
     const sign = convertedVal < 0 ? '-' : '';
+    if (abs >= 1e9) return sign + symbol + (abs / 1e9).toFixed(2) + 'B';
     if (abs >= 1e6) return sign + symbol + (abs / 1e6).toFixed(2) + 'M';
-    return sign + symbol + abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (abs >= 1e5) return sign + symbol + (abs / 1e3).toFixed(1) + 'K';
+    return sign + symbol + abs.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }

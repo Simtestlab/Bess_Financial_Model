@@ -9,6 +9,7 @@ const IncomeTable = lazy(() => import('./IncomeTable'));
 const CashFlowTable = lazy(() => import('./CashFlowTable'));
 const SensitivityPanel = lazy(() => import('./SensitivityPanel'));
 const ChartsPanel = lazy(() => import('./ChartsPanel'));
+const FinancialManualModal = lazy(() => import('./FinancialManualModal'));
 
 const TABS = [
     { id: 'tab-income', label: 'Income Statement' },
@@ -18,8 +19,9 @@ const TABS = [
 ] as const;
 
 const TabFallback = () => (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem', color: '#94a3b8' }}>
-        Loading…
+    <div className="tab-loading">
+        <div className="section-loading-spinner" />
+        <span>Loading...</span>
     </div>
 );
 
@@ -34,6 +36,7 @@ function FinancialMain({
     currencySymbol
 }: any) {
     const [activeTab, setActiveTab] = useState('tab-income');
+    const [manualOpen, setManualOpen] = useState(false);
 
     const handleExport = useCallback(() => {
         if (model) {
@@ -68,6 +71,10 @@ function FinancialMain({
                         <span id="kpi-rev" className="kpi-value">{model ? fmtDollar(model.totalRevenue[0], currencySymbol, exchangeRate) : '—'}</span>
                     </div>
                 </div>
+                <button className="btn-manual" title="Open Manual" onClick={() => setManualOpen(true)}>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 2h4.5l1.5 1.5L9.5 2H14v12H9.5l-1.5 1.5L6.5 14H2z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /><path d="M8 3.5V14" stroke="currentColor" strokeWidth="1.3" /></svg>
+                    Manual
+                </button>
                 <button id="btn-export" className="btn-export" title="Export CSV" onClick={handleExport}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M2 11v3h12v-3M8 2v8M5 7l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -138,6 +145,13 @@ function FinancialMain({
                     </section>
                 )}
             </div>
+
+            {/* === FINANCIAL MANUAL MODAL === */}
+            {manualOpen && (
+                <Suspense fallback={null}>
+                    <FinancialManualModal onClose={() => setManualOpen(false)} />
+                </Suspense>
+            )}
         </main>
     );
 }
