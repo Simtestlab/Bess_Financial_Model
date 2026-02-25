@@ -44,10 +44,12 @@ export function runModel(p) {
 
     // ── Operating Expenses ──────────────────────────────────
     const insurance = years.map((_, y) =>
-        p.capex * p.insuranceRate * Math.pow(1 + p.inflationRate, y)
+        p.capex * p.insuranceRate
     );
-    const varOm = years.map((_, y) =>
-        totalRevenue[y] * p.varOmRate * Math.pow(1 + p.inflationRate, y)
+    // Variable O&M calculated as: variable O&M rate (currency/MWh) * annual throughput (MWh/yr)
+    const annualThroughput = p.capacity * p.cyclesPerDay * 365; // MWh per year
+    const varOm = years.map(() =>
+        annualThroughput * p.varOmRate
     );
     const baseFixed = p.fixedOm + p.adminCost + p.preventiveMaintenance;
     const fixedOm = years.map((_, y) =>
@@ -255,6 +257,13 @@ export function computePPAVolume(params) {
     return Math.round(params.capacity * cycles * params.arbDays * params.rte * params.availability);
 }
 
+export function computePPAPrice(ppaVolume, ppaRate) {
+    // PPA Price = PPA Rate (₹/kWh) × 1000 (to convert to ₹/MWh)
+    // This is the UNIT price, NOT annual revenue
+    // Annual revenue = ppaVolume × ppaPrice is calculated in runModel
+    return Math.round(ppaRate * 1000);
+}
+
 /* ──────────────────────────────────────────────────────────────
    DEFAULT INPUT VALUES
    NOTE: All monetary values are stored internally in INR (₹)
@@ -269,25 +278,27 @@ export const DEFAULTS = {
     rte: 90,                    // % (Round-trip efficiency)
     
     // Energy Pricing (INR)
-    chargePrice: costsConfig.financial.chargePrice,            // ₹/MWh
-    dischargePrice: costsConfig.financial.dischargePrice,      // ₹/MWh
+    // Note: UI accepts prices in ₹/kWh; defaults converted from config (which stores ₹/MWh)
+    chargePrice: 3,               // ₹/kWh (UI)
+    dischargePrice: 4.5,          // ₹/kWh (UI)
     
     // Revenue Parameters (INR)
     ppaVol: 3500,               // MWh/yr
-    ppaPrice: costsConfig.financial.ppaPrice,                  // ₹/MWh
+    ppaRate: 6,                 // ₹/kWh (used to auto-calculate PPA Price)
+    ppaPrice: costsConfig.financial.ppaPrice,                  // ₹/MWh (auto-calculated)
     ppaEsc: 0,                  // %
     ancillary: costsConfig.financial.ancillary,                // ₹/yr
     otherRev: costsConfig.financial.otherRev,                  // ₹/yr
     
     // Cost & Investment (INR)
     capex: costsConfig.financial.capex,                        // ₹ (Total CAPEX - can import from BESS Sizing)
-    insurance: 1.0,             // %
-    varOm: 1.0,                 // %
+    insurance: 0.3,             // %
+    varOm: 90,                  // ₹/MWh (Variable O&M rate - currency per MWh)
     fixedOm: costsConfig.financial.fixedOm,                    // ₹/yr
     inflation: 3.0,             // %
-    adminCost: costsConfig.financial.adminCost,                // ₹/yr
-    preventiveMaintenance: costsConfig.financial.preventiveMaintenance, // ₹/yr
-    projectLife: 10,            // years
+    adminCost: 0,                // ₹/yr
+    preventiveMaintenance: 0,    // ₹/yr
+    projectLife: 20,            // years
     degradation: 3.0,           // %
     cyclesPerDay: 1,            // cycles/day
     
@@ -307,15 +318,16 @@ export function buildParams(inputs: any): any {
         availability: inputs.availability / 100,
         cyclesPerDay: inputs.cyclesPerDay,
         rte: inputs.rte / 100,
-        chargePrice: inputs.chargePrice,
-        dischargePrice: inputs.dischargePrice,
-        ppaPrice: inputs.ppaPrice,
+        // Convert UI values (₹/kWh) to internal engine units (₹/MWh)
+        chargePrice: inputs.chargePrice * 1000,
+        dischargePrice: inputs.dischargePrice * 1000,
+        ppaRate: inputs.ppaRate,
         ppaEsc: inputs.ppaEsc / 100,
         ancillaryRev: inputs.ancillary,
         otherRev: inputs.otherRev,
         capex: inputs.capex,
         insuranceRate: inputs.insurance / 100,
-        varOmRate: inputs.varOm / 100,
+        varOmRate: inputs.varOm,
         fixedOm: inputs.fixedOm,
         adminCost: inputs.adminCost,
         preventiveMaintenance: inputs.preventiveMaintenance,
@@ -329,5 +341,6 @@ export function buildParams(inputs: any): any {
         degradation: inputs.degradation / 100,
     };
     p.ppaVolume = computePPAVolume(p);
+    p.ppaPrice = computePPAPrice(p.ppaVolume, p.ppaRate);
     return p;
 }

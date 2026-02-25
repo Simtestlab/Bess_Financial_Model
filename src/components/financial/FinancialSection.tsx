@@ -5,16 +5,26 @@ import FinancialSidebar from './FinancialSidebar';
 import FinancialMain from './FinancialMain';
 import { DEFAULTS, buildParams, runModel } from '@/lib/engine';
 import { useCurrency } from '@/lib/CurrencyContext';
+import { useSizing } from '@/lib/SizingContext';
 import { getCurrencyInfo } from '@/lib/currency';
 
 export default function FinancialSection() {
     const [inputs, setInputs] = useState({ ...DEFAULTS });
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const { selectedCurrency, exchangeRate } = useCurrency();
+    const { systemMW, grandTotal } = useSizing();
     const recalcTimerRef = useRef<any>(null);
     const inputsRef = useRef(inputs);
     const [model, setModel] = useState<any>(null);
     const [params, setParams] = useState<any>(null);
+    const STORAGE_KEY = 'bess-financial-inputs-v1';
+
+    function saveInputsLocal(next: any) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { }
+    }
+    function loadInputsLocal(): any | null {
+        try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
+    }
 
     // Responsive: collapse sidebar on small screens
     useEffect(() => {
@@ -30,18 +40,53 @@ export default function FinancialSection() {
         setModel(m);
     }, []);
 
-    // Initial calculation
+    // Initial calculation + restore saved inputs
     useEffect(() => {
-        recalculate(inputs);
+        const saved = loadInputsLocal();
+        const merged = saved ? { ...DEFAULTS, ...saved } : { ...DEFAULTS };
+        setInputs(merged);
+        inputsRef.current = merged;
+        recalculate(merged);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Cleanup timer on unmount
     useEffect(() => () => clearTimeout(recalcTimerRef.current), []);
 
+    // Auto-sync usable capacity = systemMW × round-trip-efficiency (assumes 1 hour)
+    useEffect(() => {
+        if (systemMW !== null && !isNaN(systemMW)) {
+            const rtePct = inputs.rte || 0; // inputs.rte is in percent (e.g. 90)
+            const capacityMWh = systemMW * (rtePct / 100);
+            setInputs(prev => {
+                const next = { ...prev, capacity: capacityMWh };
+                inputsRef.current = next;
+                clearTimeout(recalcTimerRef.current);
+                recalcTimerRef.current = setTimeout(() => recalculate(inputsRef.current), 120);
+                return next;
+            });
+        }
+    }, [systemMW, inputs.rte, recalculate]);
+
+    // Auto-sync total CAPEX from handbook grand total
+    useEffect(() => {
+        if (grandTotal !== null && !isNaN(grandTotal)) {
+            setInputs(prev => {
+                const next = { ...prev, capex: grandTotal };
+                inputsRef.current = next;
+                saveInputsLocal(next);
+                clearTimeout(recalcTimerRef.current);
+                recalcTimerRef.current = setTimeout(() => recalculate(inputsRef.current), 120);
+                return next;
+            });
+        }
+    }, [grandTotal, recalculate]);
+
     const handleInputChange = useCallback((key: string, value: number) => {
         setInputs(prev => {
             const next = { ...prev, [key]: value };
             inputsRef.current = next;
+            // Persist immediately
+            saveInputsLocal(next);
             // Debounced recalculation using ref to avoid stale closures
             clearTimeout(recalcTimerRef.current);
             recalcTimerRef.current = setTimeout(() => recalculate(inputsRef.current), 120);
@@ -65,6 +110,7 @@ export default function FinancialSection() {
 
     // Memoize ppaVolume to avoid recalculating on every render
     const ppaVolume = useMemo(() => params ? params.ppaVolume : 0, [params]);
+    const ppaPrice = useMemo(() => params ? params.ppaPrice : 0, [params]);
 
     return (
         <>
@@ -74,6 +120,7 @@ export default function FinancialSection() {
                 onReset={handleReset}
                 collapsed={sidebarCollapsed}
                 ppaVolume={ppaVolume}
+                ppaPrice={ppaPrice}
                 currencySymbol={currencySymbol}
                 exchangeRate={exchangeRate}
             />

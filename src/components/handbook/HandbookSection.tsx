@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo, memo } from 'react';
 import { ALL_DEFAULTS, calculateAll } from '@/lib/handbook-engine';
 import { useCurrency } from '@/lib/CurrencyContext';
+import { useSizing } from '@/lib/SizingContext';
 import { getCurrencyInfo, getExchangeRate } from '@/lib/currency';
 import { fmtCurrency } from '@/lib/formatters';
 
@@ -144,6 +145,7 @@ export default function HandbookSection() {
     const inputsRef = useRef(inputs);
 
     const { selectedCurrency } = useCurrency();
+    const { setSystemMW, setGrandTotal } = useSizing();
     const cInfo = useMemo(() => getCurrencyInfo(selectedCurrency), [selectedCurrency]);
     const sym = cInfo?.symbol || '₹';
     const [bessRate, setBessRate] = useState<number>(1);
@@ -169,6 +171,19 @@ export default function HandbookSection() {
 
     // Cleanup timer on unmount
     useEffect(() => () => clearTimeout(recalcTimerRef.current), []);
+
+    // Publish system MW and grand total to shared context for financial model
+    useEffect(() => {
+        // publish the user-selected systemMW (power rating, in MW)
+        setSystemMW(inputs.systemMW);
+    }, [inputs.systemMW, setSystemMW]);
+
+    useEffect(() => {
+        // publish the grand total CAPEX from handbook calculation
+        if (outputs?.summary) {
+            setGrandTotal(outputs.summary.totalSystemCost);
+        }
+    }, [outputs?.summary, setGrandTotal]);
 
     const recalc = useCallback((cur: typeof ALL_DEFAULTS) => {
         saveInputs(cur);
