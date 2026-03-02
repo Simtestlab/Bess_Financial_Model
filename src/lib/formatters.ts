@@ -26,6 +26,13 @@ export function fmtDollar(val: number | null | undefined, symbol: string = '$', 
     const convertedVal = val * exchangeRate;
     const abs = Math.abs(convertedVal);
     const sign = convertedVal < 0 ? '-' : '';
+    // Use Indian numbering (lakhs/crores) for INR symbol, otherwise use standard B/M/K
+    if (symbol === '₹') {
+        if (abs >= 1e7) return sign + symbol + (abs / 1e7).toFixed(2) + 'Cr';
+        if (abs >= 1e5) return sign + symbol + (abs / 1e5).toFixed(2) + 'L';
+        if (abs >= 1e3) return sign + symbol + (abs / 1e3).toFixed(1) + 'K';
+        return sign + symbol + abs.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
     if (abs >= 1e9) return sign + symbol + (abs / 1e9).toFixed(2) + 'B';
     if (abs >= 1e6) return sign + symbol + (abs / 1e6).toFixed(2) + 'M';
     if (abs >= 1e5) return sign + symbol + (abs / 1e3).toFixed(1) + 'K';
@@ -58,6 +65,13 @@ export function fmtCurrency(val: number | null | undefined, symbol: string = '$'
     const convertedVal = val * exchangeRate;
     const abs = Math.abs(convertedVal);
     const sign = convertedVal < 0 ? '-' : '';
+    // Use Indian numbering (lakhs/crores) for INR symbol, otherwise use standard B/M/K
+    if (symbol === '₹') {
+        if (abs >= 1e7) return sign + symbol + (abs / 1e7).toFixed(2) + 'Cr';
+        if (abs >= 1e5) return sign + symbol + (abs / 1e5).toFixed(2) + 'L';
+        if (abs >= 1e3) return sign + symbol + (abs / 1e3).toFixed(1) + 'K';
+        return sign + symbol + abs.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
     if (abs >= 1e9) return sign + symbol + (abs / 1e9).toFixed(2) + 'B';
     if (abs >= 1e6) return sign + symbol + (abs / 1e6).toFixed(2) + 'M';
     if (abs >= 1e5) return sign + symbol + (abs / 1e3).toFixed(1) + 'K';
